@@ -1,0 +1,8 @@
+.DS_Store
+solitaire
+.o
+solitaire.dSYM
+.vscode/
+gmon.out
+report.txt
+index.*
