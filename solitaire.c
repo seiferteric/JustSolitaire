@@ -713,11 +713,6 @@ void draw_outline(struct Deck *deck) {
 
 void draw_table(void) {
 
-  SDL_Point wp, fp;
-  deck_xy(&card_table.waste, &wp);
-  deck_xy(&card_table.foundations[0], &fp);
-  // button_rect.x = wp.x + CARD_W + WIN_W / STAGGER_DIV;// + button_rect.w/2
-  // button_rect.x = wp.x + CARD_W + (fp.x - (wp.x+CARD_W))/2 - button_rect.w/2;
   button_rect.x = WIN_W / 2 - button_rect.w / 2;
   button_rect.y = 0;
   SDL_RenderCopy(ren, t_cards[DSIZE + 2], NULL, &button_rect);
