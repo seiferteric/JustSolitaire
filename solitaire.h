@@ -1,4 +1,6 @@
 #pragma once
+#include <GL/gl.h>
+#include <GL/glu.h>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <stdint.h>
@@ -6,8 +8,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include <GL/gl.h>
-#include <GL/glu.h>
 
 #define DSIZE 52
 #define DECKS 14

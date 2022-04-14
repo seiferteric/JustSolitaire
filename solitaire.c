@@ -148,7 +148,7 @@ BOOL can_drop_pile(struct Card *hand_card, struct Card *drop_on) {
   return FALSE;
 }
 BOOL can_drop_deck(struct Deck *hand, struct Deck *drop_on) {
-  if(drop_on->len)
+  if (drop_on->len)
     return FALSE;
   if (drop_on->type == FOUNDATION) {
     if (hand->len == 1 && hand->cards[0].card == ACE)
@@ -308,10 +308,11 @@ void scale(void) {
   bck = SDL_CreateTexture(ren, SDL_PIXELFORMAT_RGBX8888,
                           SDL_TEXTUREACCESS_TARGET, WIN_W, WIN_H);
 
-  SDL_QueryTexture(t_cards[DSIZE+2], NULL, NULL, &button_rect.w, &button_rect.h);
+  SDL_QueryTexture(t_cards[DSIZE + 2], NULL, NULL, &button_rect.w,
+                   &button_rect.h);
 
-  button_rect.w = (int)((float)button_rect.w * CARD_SCALE*2);
-  button_rect.h = (int)((float)button_rect.h * CARD_SCALE*2);
+  button_rect.w = (int)((float)button_rect.w * CARD_SCALE * 2);
+  button_rect.h = (int)((float)button_rect.h * CARD_SCALE * 2);
 }
 void main_loop(void) {
 
@@ -358,8 +359,8 @@ void main_loop(void) {
       break;
 #ifdef WASM
     case SDL_QUIT:
-        emscripten_cancel_main_loop();
-        break;
+      emscripten_cancel_main_loop();
+      break;
 #endif
     }
   }
@@ -482,12 +483,12 @@ void handle_click(SDL_Event *event) {
   SDL_Point mp;
   mp.x = event->button.x;
   mp.y = event->button.y;
-  if(SDL_PointInRect(&mp, &button_rect)) {
+  if (SDL_PointInRect(&mp, &button_rect)) {
     new_game();
     update();
     return;
   }
-  
+
   struct Card *card = find_card(event->button.x, event->button.y);
   struct Deck *deck;
   if (NULL == card)
@@ -577,7 +578,8 @@ void handle_unclick(SDL_Event *event) {
     stack_deck(&card_table.hand, drop_on->deck);
     if (HandState.hand_from->len && HandState.hand_from->tail->facing == DOWN)
       flip_card(HandState.hand_from->tail);
-  } else if ((drop_deck = find_deck(event->button.x, event->button.y)) && !drop_deck->len) {
+  } else if ((drop_deck = find_deck(event->button.x, event->button.y)) &&
+             !drop_deck->len) {
     if (can_drop_deck(&card_table.hand, drop_deck)) {
       stack_deck(&card_table.hand, drop_deck);
       if (HandState.hand_from->len && HandState.hand_from->tail->facing == DOWN)
@@ -637,7 +639,7 @@ int deck_xy(struct Deck *deck, SDL_Point *point) {
     return 0;
   case PILE:
     point->x = STOCK_X + deck->index * (CARD_W + WIN_W / STAGGER_DIV);
-    point->y = STOCK_Y + button_rect.h +  CARD_H + WIN_W / STAGGER_DIV;
+    point->y = STOCK_Y + button_rect.h + CARD_H + WIN_W / STAGGER_DIV;
     return 0;
   default:
     return -1;
@@ -716,9 +718,9 @@ void draw_table(void) {
   deck_xy(&card_table.foundations[0], &fp);
   // button_rect.x = wp.x + CARD_W + WIN_W / STAGGER_DIV;// + button_rect.w/2
   // button_rect.x = wp.x + CARD_W + (fp.x - (wp.x+CARD_W))/2 - button_rect.w/2;
-  button_rect.x = WIN_W/2 - button_rect.w/2;
+  button_rect.x = WIN_W / 2 - button_rect.w / 2;
   button_rect.y = 0;
-  SDL_RenderCopy(ren, t_cards[DSIZE+2], NULL, &button_rect);
+  SDL_RenderCopy(ren, t_cards[DSIZE + 2], NULL, &button_rect);
 
   // Except HAND deck
   for (int d = 0; d < card_table.decks - 1; d++) {
@@ -765,7 +767,7 @@ void check_game_over(void) {
         }
       }
       SDL_RenderPresent(ren);
-	  SDL_Delay(2);
+      SDL_Delay(2);
     }
   }
 }
