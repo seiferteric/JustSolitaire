@@ -31,6 +31,8 @@ int WIN_H;
 int GAME_TIME = 0;
 enum STATE GAME_STATE = RUNNING;
 
+TTF_Font* Sans;
+
 struct {
   BOOL clicked;
   BOOL moving;
@@ -286,7 +288,6 @@ void update_hand(void) {
   SDL_RenderPresent(ren);
 }
 int gfx_init(void) {
-  SDL_SetHint(SDL_HINT_RENDER_DRIVER, "opengl");
   if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) != 0) {
     SDL_Log("Unable to initialize SDL: %s", SDL_GetError());
     return -1;
@@ -298,12 +299,12 @@ int gfx_init(void) {
   WIN_W = 1100;
   WIN_H = 768;
   win = SDL_CreateWindow(
-      "Solitaire", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, WIN_W,
-      WIN_H, SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
+      "JustSolitaire", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, WIN_W,
+      WIN_H, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
   ren = SDL_CreateRenderer(win, -1, SDL_RENDERER_ACCELERATED);
   bck = SDL_CreateTexture(ren, SDL_PIXELFORMAT_RGBX8888,
                           SDL_TEXTUREACCESS_TARGET, WIN_W, WIN_H);
-
+  
   if (-1 == load_textures())
     return -1;
   SDL_SetRenderDrawColor(ren, 0x07, 0x63, 0x24, 0);
@@ -322,7 +323,7 @@ void scale(void) {
 
   SDL_QueryTexture(t_cards[DSIZE + 2], NULL, NULL, &button_rect.w,
                    &button_rect.h);
-
+  Sans = TTF_OpenFont("./img/FreeSans.ttf", (int)(96.0*CARD_SCALE));
   button_rect.w = (int)((float)button_rect.w * CARD_SCALE * 2);
   button_rect.h = (int)((float)button_rect.h * CARD_SCALE * 2);
 }
@@ -341,7 +342,6 @@ void main_loop(void) {
       if (event.window.event == SDL_WINDOWEVENT_CLOSE)
         quit();
       if (event.window.event == SDL_WINDOWEVENT_RESIZED) {
-        glViewport(0, 0, event.window.data1, event.window.data2);
         WIN_W = event.window.data1;
         WIN_H = event.window.data2;
         scale();
@@ -747,7 +747,7 @@ void draw_text(void) {
   SDL_Rect trect = {};
   char str[10] = {};
   snprintf(str, 10, "%u", GAME_TIME);
-  TTF_Font* Sans = TTF_OpenFont("./img/FreeSans.ttf", (int)(96.0*CARD_SCALE));
+  
   if(!Sans)
     printf("Faild font load: %s\n", SDL_GetError());
   TTF_SizeText(Sans, str, &trect.w, &trect.h);
