@@ -32,7 +32,7 @@ int GAME_TIME = 0;
 enum STATE GAME_STATE = RUNNING;
 int last_loop_tm = 0;
 
-TTF_Font* Sans;
+TTF_Font *Sans;
 
 struct {
   BOOL clicked;
@@ -180,8 +180,8 @@ void stack_deck(struct Deck *src, struct Deck *dst) {
   }
 }
 
-void new_game(void) { 
-  init_table(); 
+void new_game(void) {
+  init_table();
   GAME_TIME = 0;
   GAME_STATE = RUNNING;
   last_loop_tm = time(NULL);
@@ -279,13 +279,13 @@ void clear(void) {
 }
 void update(void) {
 
-  if(card_table.hand.len) {
+  if (card_table.hand.len) {
     SDL_SetRenderTarget(ren, bck);
     SDL_RenderClear(ren);
     draw_table();
     SDL_RenderPresent(ren);
     update_hand();
-  }else {
+  } else {
     SDL_RenderClear(ren);
     draw_table();
     SDL_RenderPresent(ren);
@@ -303,19 +303,19 @@ int gfx_init(void) {
     SDL_Log("Unable to initialize SDL: %s", SDL_GetError());
     return -1;
   }
-  if(TTF_Init()==-1) {
-      SDL_Log("TTF_Init: %s\n", TTF_GetError());
-      return -1;
+  if (TTF_Init() == -1) {
+    SDL_Log("TTF_Init: %s\n", TTF_GetError());
+    return -1;
   }
   WIN_W = 1100;
   WIN_H = 768;
-  win = SDL_CreateWindow(
-      "JustSolitaire", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, WIN_W,
-      WIN_H, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
+  win = SDL_CreateWindow("JustSolitaire", SDL_WINDOWPOS_UNDEFINED,
+                         SDL_WINDOWPOS_UNDEFINED, WIN_W, WIN_H,
+                         SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
   ren = SDL_CreateRenderer(win, -1, SDL_RENDERER_ACCELERATED);
   bck = SDL_CreateTexture(ren, SDL_PIXELFORMAT_RGBX8888,
                           SDL_TEXTUREACCESS_TARGET, WIN_W, WIN_H);
-  
+
   if (-1 == load_textures())
     return -1;
   SDL_SetRenderDrawColor(ren, 0x07, 0x63, 0x24, 0);
@@ -336,7 +336,7 @@ void scale(void) {
 
   SDL_QueryTexture(t_cards[DSIZE + 2], NULL, NULL, &button_rect.w,
                    &button_rect.h);
-  Sans = TTF_OpenFont("./img/FreeSans.ttf", (int)(96.0*CARD_SCALE));
+  Sans = TTF_OpenFont("./img/FreeSans.ttf", (int)(96.0 * CARD_SCALE));
   button_rect.w = (int)((float)button_rect.w * CARD_SCALE * 2);
   button_rect.h = (int)((float)button_rect.h * CARD_SCALE * 2);
 }
@@ -394,7 +394,7 @@ void main_loop(void) {
   }
 #ifdef __EMSCRIPTEN__
   int tm = time(NULL);
-  if(tm-last_loop_tm >= 1) {
+  if (tm - last_loop_tm >= 1) {
     last_loop_tm = tm;
     game_timer(0, NULL);
   }
@@ -740,7 +740,7 @@ void draw_outline(struct Deck *deck) {
   SDL_RenderCopy(ren, cardimg, NULL, &rect);
 }
 unsigned int game_timer(unsigned int i, void *param) {
-  if(GAME_STATE == RUNNING) {
+  if (GAME_STATE == RUNNING) {
     GAME_TIME += 1;
     SDL_Event event;
     SDL_UserEvent userevent;
@@ -761,25 +761,24 @@ void draw_header(void) {
   SDL_Rect trect = {};
   char str[10] = {};
   snprintf(str, 10, "%u", GAME_TIME);
-  
-  if(!Sans)
+
+  if (!Sans)
     printf("Faild font load: %s\n", SDL_GetError());
   TTF_SizeText(Sans, str, &trect.w, &trect.h);
   trect.x = WIN_W - trect.w;
   trect.y = 0;
   SDL_Color White = {255, 255, 255, 0};
-  SDL_Surface* surfaceMessage =
-    TTF_RenderText_Solid(Sans, str, White); 
-  SDL_Texture* Message = SDL_CreateTextureFromSurface(ren, surfaceMessage);
+  SDL_Surface *surfaceMessage = TTF_RenderText_Solid(Sans, str, White);
+  SDL_Texture *Message = SDL_CreateTextureFromSurface(ren, surfaceMessage);
 
-  SDL_SetRenderDrawColor(ren, 0x43,0x26,0x16,0);
+  SDL_SetRenderDrawColor(ren, 0x43, 0x26, 0x16, 0);
   SDL_Rect hrect = {0, 0, WIN_W, button_rect.h};
   SDL_RenderFillRect(ren, &hrect);
 
   button_rect.x = 0;
   button_rect.y = 0;
   SDL_RenderCopy(ren, t_cards[DSIZE + 2], NULL, &button_rect);
-  SDL_Rect rect = {WIN_W-button_rect.w, 0, button_rect.w, button_rect.h};
+  SDL_Rect rect = {WIN_W - button_rect.w, 0, button_rect.w, button_rect.h};
   SDL_RenderFillRect(ren, &rect);
   SDL_SetRenderDrawColor(ren, 0x07, 0x63, 0x24, 0);
 
@@ -795,8 +794,6 @@ void draw_table(void) {
     struct Deck *deck = card_table.deck_list[d];
     draw_deck(deck);
   }
-
-  
 }
 
 void draw_deck(struct Deck *deck) {
@@ -804,7 +801,7 @@ void draw_deck(struct Deck *deck) {
     draw_outline(deck);
     return;
   }
-  if(!deck->len)
+  if (!deck->len)
     return;
   int n_cards = 1;
   if (deck->stagger_n > 0)

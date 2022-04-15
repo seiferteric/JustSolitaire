@@ -1,7 +1,6 @@
 #pragma once
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
-#include <SDL2/SDL_image.h>
 #include <SDL2/SDL_ttf.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -43,7 +42,7 @@ enum CARD {
 };
 enum FACE { DOWN, UP };
 enum DECK_TYPE { FOUNDATION, PILE, WASTE, STOCK, HAND };
-enum STATE {RUNNING, END};
+enum STATE { RUNNING, END };
 struct Card {
   uint8_t num;
   enum FACE facing;
