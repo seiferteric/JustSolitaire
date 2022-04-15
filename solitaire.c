@@ -826,13 +826,14 @@ void check_game_over(void) {
   if (fcards == DSIZE) {
     GAME_STATE = END;
     const float PI = 3.141;
+    const float rnd_off = (float)(rand() % 360) * (PI/180.0);
     for (int i = 0; i < 300; i++) {
       for (int d = 0; d < FOUNDATIONS; d++) {
         struct Deck *deck = &card_table.foundations[d];
         SDL_Point corner;
         deck_xy(deck, &corner);
         for (int c = 0; c < deck->len; c++) {
-          float ang = 2.0 * PI *
+          float ang = rnd_off + 2.0 * PI *
                       ((float)(d + c) / (float)(FOUNDATIONS + deck->len - 2));
           draw_card(&deck->cards[c], corner.x + cos(ang) * i * 10.0,
                     corner.y + sin(ang) * i * 10.0);
@@ -846,7 +847,7 @@ void check_game_over(void) {
   }
 }
 
-int main(void) {
+int main(int argc, char* argv[]) {
 
   new_game();
   if (-1 == gfx_init())
@@ -856,4 +857,5 @@ int main(void) {
 #else
   main_loop();
 #endif
+  return 0;
 }
