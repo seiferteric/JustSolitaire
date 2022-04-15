@@ -28,6 +28,9 @@ float CARD_SCALE;
 int WIN_W;
 int WIN_H;
 
+int GAME_TIME = 0;
+enum STATE GAME_STATE = RUNNING;
+
 struct {
   BOOL clicked;
   BOOL moving;
@@ -174,7 +177,11 @@ void stack_deck(struct Deck *src, struct Deck *dst) {
   }
 }
 
-void new_game(void) { init_table(); }
+void new_game(void) { 
+  init_table(); 
+  GAME_TIME = 0;
+  GAME_STATE = RUNNING;
+}
 
 void init_table(void) {
   int ndecks = 0;
@@ -280,9 +287,13 @@ void update_hand(void) {
 }
 int gfx_init(void) {
   SDL_SetHint(SDL_HINT_RENDER_DRIVER, "opengl");
-  if (SDL_Init(SDL_INIT_VIDEO) != 0) {
+  if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) != 0) {
     SDL_Log("Unable to initialize SDL: %s", SDL_GetError());
     return -1;
+  }
+  if(TTF_Init()==-1) {
+      SDL_Log("TTF_Init: %s\n", TTF_GetError());
+      return -1;
   }
   WIN_W = 1100;
   WIN_H = 768;
@@ -298,6 +309,7 @@ int gfx_init(void) {
   SDL_SetRenderDrawColor(ren, 0x07, 0x63, 0x24, 0);
   scale();
   clear();
+  SDL_AddTimer(1000, game_timer, NULL);
   return 0;
 }
 void scale(void) {
@@ -356,6 +368,9 @@ void main_loop(void) {
       break;
     case SDL_MOUSEMOTION:
       handle_motion(&event);
+      break;
+    case SDL_USEREVENT:
+      draw_text();
       break;
 #ifdef WASM
     case SDL_QUIT:
@@ -710,18 +725,70 @@ void draw_outline(struct Deck *deck) {
   rect.h = CARD_H;
   SDL_RenderCopy(ren, cardimg, NULL, &rect);
 }
+unsigned int game_timer(unsigned int i, void *param) {
+  if(GAME_STATE == RUNNING) {
+    GAME_TIME += 1;
+    SDL_Event event;
+    SDL_UserEvent userevent;
 
+    userevent.type = SDL_USEREVENT;
+    userevent.code = 0;
+    userevent.data1 = NULL;
+    userevent.data2 = NULL;
+
+    event.type = SDL_USEREVENT;
+    event.user = userevent;
+
+    SDL_PushEvent(&event);
+  }
+  return 1000;
+}
+void draw_text(void) {
+  SDL_Rect trect = {};
+  char str[10] = {};
+  snprintf(str, 10, "%u", GAME_TIME);
+  TTF_Font* Sans = TTF_OpenFont("./FreeSans.ttf", (int)(96.0*CARD_SCALE));
+  if(!Sans)
+    printf("Faild font load: %s\n", SDL_GetError());
+  TTF_SizeText(Sans, str, &trect.w, &trect.h);
+  trect.x = WIN_W - trect.w;
+  trect.y = 0;
+  SDL_Color White = {255, 255, 255, 0};
+  SDL_Surface* surfaceMessage =
+    TTF_RenderText_Solid(Sans, str, White); 
+  SDL_Texture* Message = SDL_CreateTextureFromSurface(ren, surfaceMessage);
+
+  SDL_SetRenderDrawColor(ren, 0x43,0x26,0x16,0);
+  SDL_Rect rect = {WIN_W-button_rect.w, 0, button_rect.w, button_rect.h};
+  SDL_RenderFillRect(ren, &rect);
+  SDL_SetRenderDrawColor(ren, 0x07, 0x63, 0x24, 0);
+
+  SDL_RenderCopy(ren, Message, NULL, &trect);
+  SDL_FreeSurface(surfaceMessage);
+  SDL_DestroyTexture(Message);
+  
+  SDL_RenderPresent(ren);
+}
 void draw_table(void) {
 
-  button_rect.x = WIN_W / 2 - button_rect.w / 2;
+  SDL_SetRenderDrawColor(ren, 0x43,0x26,0x16,0);
+  SDL_Rect rect = {0, 0, WIN_W, button_rect.h};
+  SDL_RenderFillRect(ren, &rect);
+  SDL_SetRenderDrawColor(ren, 0x07, 0x63, 0x24, 0);
+
+  button_rect.x = 0;//WIN_W / 2 - button_rect.w / 2;
   button_rect.y = 0;
   SDL_RenderCopy(ren, t_cards[DSIZE + 2], NULL, &button_rect);
+
+  
 
   // Except HAND deck
   for (int d = 0; d < card_table.decks - 1; d++) {
     struct Deck *deck = card_table.deck_list[d];
     draw_deck(deck);
   }
+
+  draw_text();
 }
 
 void draw_deck(struct Deck *deck) {
@@ -748,8 +815,9 @@ void check_game_over(void) {
     fcards += card_table.foundations[f].len;
   }
   if (fcards == DSIZE) {
+    GAME_STATE = END;
     const float PI = 3.141;
-    for (int i = 0; i < 200; i++) {
+    for (int i = 0; i < 300; i++) {
       for (int d = 0; d < FOUNDATIONS; d++) {
         struct Deck *deck = &card_table.foundations[d];
         SDL_Point corner;
@@ -762,8 +830,10 @@ void check_game_over(void) {
         }
       }
       SDL_RenderPresent(ren);
-      SDL_Delay(2);
+      SDL_Delay(10);
     }
+    SDL_Delay(2000);
+    update();
   }
 }
 

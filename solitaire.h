@@ -3,6 +3,8 @@
 #include <GL/glu.h>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
+#include <SDL2/SDL_image.h>
+#include <SDL2/SDL_ttf.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -43,6 +45,7 @@ enum CARD {
 };
 enum FACE { DOWN, UP };
 enum DECK_TYPE { FOUNDATION, PILE, WASTE, STOCK, HAND };
+enum STATE {RUNNING, END};
 struct Card {
   uint8_t num;
   enum FACE facing;
@@ -115,6 +118,7 @@ void update(void);
 void update_hand(void);
 void check_game_over(void);
 void quick_move(struct Card *card);
-
+unsigned int game_timer(unsigned int, void *);
+void draw_text(void);
 #define texture_from_card(CARD)                                                \
   (CARD->facing == UP ? t_cards[CARD->num] : t_cards[DSIZE]);
