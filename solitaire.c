@@ -311,7 +311,7 @@ int gfx_init(void) {
   WIN_H = 768;
   win = SDL_CreateWindow("JustSolitaire", SDL_WINDOWPOS_UNDEFINED,
                          SDL_WINDOWPOS_UNDEFINED, WIN_W, WIN_H,
-                         SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
+                         SDL_WINDOW_RESIZABLE);
   ren = SDL_CreateRenderer(win, -1, SDL_RENDERER_ACCELERATED);
   bck = SDL_CreateTexture(ren, SDL_PIXELFORMAT_RGBX8888,
                           SDL_TEXTUREACCESS_TARGET, WIN_W, WIN_H);
@@ -354,7 +354,7 @@ void main_loop(void) {
     case SDL_WINDOWEVENT:
       if (event.window.event == SDL_WINDOWEVENT_CLOSE)
         quit();
-      if (event.window.event == SDL_WINDOWEVENT_RESIZED) {
+      if (event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED) {
         WIN_W = event.window.data1;
         WIN_H = event.window.data2;
         scale();
