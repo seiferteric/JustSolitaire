@@ -1,5 +1,5 @@
 #include "solitaire.h"
-#ifdef WASM
+#ifdef __EMSCRIPTEN__
 #include <emscripten.h>
 #endif
 
@@ -30,6 +30,7 @@ int WIN_H;
 
 int GAME_TIME = 0;
 enum STATE GAME_STATE = RUNNING;
+int last_loop_tm = 0;
 
 TTF_Font* Sans;
 
@@ -94,7 +95,7 @@ void shuffle_init(struct Deck *deck) {
 }
 
 void init_deck(struct Deck *deck) {
-  memset(&deck->cards, 0, DSIZE);
+  memset(deck, 0, sizeof(struct Deck));
   deck->head = deck->tail = deck->cards;
   deck->len = 0;
 }
@@ -183,6 +184,7 @@ void new_game(void) {
   init_table(); 
   GAME_TIME = 0;
   GAME_STATE = RUNNING;
+  last_loop_tm = time(NULL);
 }
 
 void init_table(void) {
@@ -276,9 +278,18 @@ void clear(void) {
   SDL_RenderPresent(ren);
 }
 void update(void) {
-  SDL_RenderClear(ren);
-  draw_table();
-  SDL_RenderPresent(ren);
+
+  if(card_table.hand.len) {
+    SDL_SetRenderTarget(ren, bck);
+    SDL_RenderClear(ren);
+    draw_table();
+    SDL_RenderPresent(ren);
+    update_hand();
+  }else {
+    SDL_RenderClear(ren);
+    draw_table();
+    SDL_RenderPresent(ren);
+  }
 }
 void update_hand(void) {
   SDL_SetRenderTarget(ren, NULL);
@@ -310,7 +321,9 @@ int gfx_init(void) {
   SDL_SetRenderDrawColor(ren, 0x07, 0x63, 0x24, 0);
   scale();
   clear();
+#ifndef __EMSCRIPTEN__
   SDL_AddTimer(1000, game_timer, NULL);
+#endif
   return 0;
 }
 void scale(void) {
@@ -330,7 +343,7 @@ void scale(void) {
 void main_loop(void) {
 
   SDL_Event event;
-#ifdef WASM
+#ifdef __EMSCRIPTEN__
   {
     SDL_PollEvent(&event);
 #else
@@ -370,15 +383,22 @@ void main_loop(void) {
       handle_motion(&event);
       break;
     case SDL_USEREVENT:
-      draw_text();
+      update();
       break;
-#ifdef WASM
+#ifdef __EMSCRIPTEN__
     case SDL_QUIT:
       emscripten_cancel_main_loop();
       break;
 #endif
     }
   }
+#ifdef __EMSCRIPTEN__
+  int tm = time(NULL);
+  if(tm-last_loop_tm >= 1) {
+    last_loop_tm = tm;
+    game_timer(0, NULL);
+  }
+#endif
   return;
 }
 
@@ -405,7 +425,6 @@ struct Deck *find_deck(int x, int y) {
 }
 struct Card *find_card(int x, int y) {
   struct Card *clicked_card = NULL;
-  int found = 0;
   SDL_Point mouse;
   SDL_Rect card_rect;
   mouse.x = x;
@@ -612,20 +631,15 @@ void handle_motion(SDL_Event *event) {
   if (!HandState.clicked)
     return;
   if (!HandState.moving) {
-    SDL_SetRenderTarget(ren, bck);
-    update();
     HandState.moving = TRUE;
-    update_hand();
   } else {
-
     // This just skips updates if we are moving too fast
     // since we don't need all those redraws...
     SDL_Event excess_events[10];
     while (SDL_PeepEvents(excess_events, 10, SDL_GETEVENT, SDL_MOUSEMOTION,
                           SDL_MOUSEMOTION) > 0) {
     }
-
-    update_hand();
+    update();
   }
   int cur_x, cur_y;
   SDL_GetMouseState(&cur_x, &cur_y);
@@ -743,7 +757,7 @@ unsigned int game_timer(unsigned int i, void *param) {
   }
   return 1000;
 }
-void draw_text(void) {
+void draw_header(void) {
   SDL_Rect trect = {};
   char str[10] = {};
   snprintf(str, 10, "%u", GAME_TIME);
@@ -759,6 +773,12 @@ void draw_text(void) {
   SDL_Texture* Message = SDL_CreateTextureFromSurface(ren, surfaceMessage);
 
   SDL_SetRenderDrawColor(ren, 0x43,0x26,0x16,0);
+  SDL_Rect hrect = {0, 0, WIN_W, button_rect.h};
+  SDL_RenderFillRect(ren, &hrect);
+
+  button_rect.x = 0;
+  button_rect.y = 0;
+  SDL_RenderCopy(ren, t_cards[DSIZE + 2], NULL, &button_rect);
   SDL_Rect rect = {WIN_W-button_rect.w, 0, button_rect.w, button_rect.h};
   SDL_RenderFillRect(ren, &rect);
   SDL_SetRenderDrawColor(ren, 0x07, 0x63, 0x24, 0);
@@ -766,34 +786,26 @@ void draw_text(void) {
   SDL_RenderCopy(ren, Message, NULL, &trect);
   SDL_FreeSurface(surfaceMessage);
   SDL_DestroyTexture(Message);
-  
-  SDL_RenderPresent(ren);
 }
 void draw_table(void) {
 
-  SDL_SetRenderDrawColor(ren, 0x43,0x26,0x16,0);
-  SDL_Rect rect = {0, 0, WIN_W, button_rect.h};
-  SDL_RenderFillRect(ren, &rect);
-  SDL_SetRenderDrawColor(ren, 0x07, 0x63, 0x24, 0);
-
-  button_rect.x = 0;//WIN_W / 2 - button_rect.w / 2;
-  button_rect.y = 0;
-  SDL_RenderCopy(ren, t_cards[DSIZE + 2], NULL, &button_rect);
-
-  
-
+  draw_header();
   // Except HAND deck
   for (int d = 0; d < card_table.decks - 1; d++) {
     struct Deck *deck = card_table.deck_list[d];
     draw_deck(deck);
   }
 
-  draw_text();
+  
 }
 
 void draw_deck(struct Deck *deck) {
-  if (deck->type != HAND && !deck->len)
+  if (deck->type != HAND && !deck->len) {
     draw_outline(deck);
+    return;
+  }
+  if(!deck->len)
+    return;
   int n_cards = 1;
   if (deck->stagger_n > 0)
     n_cards = deck->stagger_n < deck->len ? deck->stagger_n : deck->len;
@@ -842,7 +854,7 @@ int main(void) {
   new_game();
   if (-1 == gfx_init())
     return -1;
-#ifdef WASM
+#ifdef __EMSCRIPTEN__
   emscripten_set_main_loop(main_loop, 0, 1);
 #else
   main_loop();

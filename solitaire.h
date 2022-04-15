@@ -117,6 +117,6 @@ void update_hand(void);
 void check_game_over(void);
 void quick_move(struct Card *card);
 unsigned int game_timer(unsigned int, void *);
-void draw_text(void);
+void draw_header(void);
 #define texture_from_card(CARD)                                                \
   (CARD->facing == UP ? t_cards[CARD->num] : t_cards[DSIZE]);

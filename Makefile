@@ -1,7 +1,5 @@
 
-CFLAGS=-O3 -Werror=implicit-function-declaration -Werror=implicit-fallthrough=3 -Werror=maybe-uninitialized -Werror=missing-field-initializers -Werror=incompatible-pointer-types -Werror=int-conversion -Werror=redundant-decls -Werror=parentheses -Wformat-nonliteral -Wformat-security -Wformat -Winit-self -Wmaybe-uninitialized -Wold-style-definition -Wredundant-decls -Wstrict-prototypes
-
-WASM_FLAGS=-D WASM=1
+CFLAGS=-O3 -Wall -Werror
 
 solitaire: solitaire.c solitaire.h
 	gcc $(CFLAGS) -std=c11 -I/opt/homebrew/include/ `sdl2-config --cflags` -o solitaire solitaire.c `sdl2-config --libs` -lSDL2_image -lm -lSDL2_ttf
