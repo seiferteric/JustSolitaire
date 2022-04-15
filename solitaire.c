@@ -747,7 +747,7 @@ void draw_text(void) {
   SDL_Rect trect = {};
   char str[10] = {};
   snprintf(str, 10, "%u", GAME_TIME);
-  TTF_Font* Sans = TTF_OpenFont("./FreeSans.ttf", (int)(96.0*CARD_SCALE));
+  TTF_Font* Sans = TTF_OpenFont("./img/FreeSans.ttf", (int)(96.0*CARD_SCALE));
   if(!Sans)
     printf("Faild font load: %s\n", SDL_GetError());
   TTF_SizeText(Sans, str, &trect.w, &trect.h);
