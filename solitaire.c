@@ -299,6 +299,9 @@ void update_hand(void) {
   SDL_RenderPresent(ren);
 }
 int gfx_init(void) {
+#ifdef __APPLE__
+  SDL_SetHint(SDL_HINT_RENDER_DRIVER, "opengl");
+#endif
   if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) != 0) {
     SDL_Log("Unable to initialize SDL: %s", SDL_GetError());
     return -1;
