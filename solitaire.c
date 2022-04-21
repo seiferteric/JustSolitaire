@@ -11,7 +11,6 @@ const char *const face_name[] = {"Down", "Up"};
 SDL_Window *win;
 SDL_Renderer *ren;
 SDL_Texture *t_cards[DSIZE + 3];
-SDL_Texture *bck;
 
 SDL_Rect button_rect = {};
 
@@ -278,30 +277,16 @@ void clear(void) {
   SDL_RenderPresent(ren);
 }
 void update(void) {
-
-  if (card_table.hand.len) {
-    SDL_SetRenderTarget(ren, bck);
-    SDL_RenderClear(ren);
-    draw_table();
-    SDL_RenderPresent(ren);
-    update_hand();
-  } else {
-    SDL_RenderClear(ren);
-    draw_table();
-    SDL_RenderPresent(ren);
-  }
-}
-void update_hand(void) {
-  SDL_SetRenderTarget(ren, NULL);
   SDL_RenderClear(ren);
-  SDL_RenderCopy(ren, bck, NULL, NULL);
-  draw_deck(&card_table.hand);
+  draw_table();
+  if (card_table.hand.len)
+    draw_deck(&card_table.hand);
   SDL_RenderPresent(ren);
+
 }
+
 int gfx_init(void) {
-#ifdef __APPLE__
-  SDL_SetHint(SDL_HINT_RENDER_DRIVER, "opengl");
-#endif
+
   if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) != 0) {
     SDL_Log("Unable to initialize SDL: %s", SDL_GetError());
     return -1;
@@ -316,8 +301,6 @@ int gfx_init(void) {
                          SDL_WINDOWPOS_UNDEFINED, WIN_W, WIN_H,
                          SDL_WINDOW_RESIZABLE);
   ren = SDL_CreateRenderer(win, -1, SDL_RENDERER_ACCELERATED);
-  bck = SDL_CreateTexture(ren, SDL_PIXELFORMAT_RGBX8888,
-                          SDL_TEXTUREACCESS_TARGET, WIN_W, WIN_H);
 
   if (-1 == load_textures())
     return -1;
@@ -333,9 +316,7 @@ void scale(void) {
   CARD_SCALE = (0.1195 * WIN_W) / CARD_ORIG_W;
   CARD_W = (int)((float)CARD_ORIG_W * CARD_SCALE);
   CARD_H = (int)((float)CARD_ORIG_H * CARD_SCALE);
-  SDL_DestroyTexture(bck);
-  bck = SDL_CreateTexture(ren, SDL_PIXELFORMAT_RGBX8888,
-                          SDL_TEXTUREACCESS_TARGET, WIN_W, WIN_H);
+
 
   SDL_QueryTexture(t_cards[DSIZE + 2], NULL, NULL, &button_rect.w,
                    &button_rect.h);

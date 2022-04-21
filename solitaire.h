@@ -112,7 +112,6 @@ void draw_table(void);
 int card_xy(struct Card *card, SDL_Point *point);
 int deck_xy(struct Deck *deck, SDL_Point *point);
 void update(void);
-void update_hand(void);
 void check_game_over(void);
 void quick_move(struct Card *card);
 unsigned int game_timer(unsigned int, void *);
