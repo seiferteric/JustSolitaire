@@ -627,6 +627,10 @@ void handle_unclick(SDL_Event *event) {
 void handle_motion(SDL_Event *event) {
   if (!HandState.clicked)
     return;
+  int cur_x, cur_y;
+  SDL_GetMouseState(&cur_x, &cur_y);
+  HandState.hand_pos.x = cur_x - HandState.click_offset.x;
+  HandState.hand_pos.y = cur_y - HandState.click_offset.y;
   if (!HandState.moving) {
     HandState.moving = TRUE;
   } else {
@@ -638,10 +642,7 @@ void handle_motion(SDL_Event *event) {
     }
     update();
   }
-  int cur_x, cur_y;
-  SDL_GetMouseState(&cur_x, &cur_y);
-  HandState.hand_pos.x = cur_x - HandState.click_offset.x;
-  HandState.hand_pos.y = cur_y - HandState.click_offset.y;
+
 }
 
 int deck_xy(struct Deck *deck, SDL_Point *point) {
