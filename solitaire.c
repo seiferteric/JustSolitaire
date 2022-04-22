@@ -27,11 +27,12 @@ float CARD_SCALE;
 int WIN_W;
 int WIN_H;
 
+int GAME_START_TICKS = 0;
 int GAME_TIME = 0;
 int GAME_END_TIME = 0;
 float RND_OFF = 0;
 enum STATE GAME_STATE = RUNNING;
-int last_loop_tm = 0;
+
 
 TTF_Font *Sans;
 
@@ -183,9 +184,9 @@ void stack_deck(struct Deck *src, struct Deck *dst) {
 
 void new_game(void) {
   init_table();
+  GAME_START_TICKS = SDL_GetTicks();
   GAME_TIME = 0;
   GAME_STATE = RUNNING;
-  last_loop_tm = time(NULL);
 }
 
 void init_table(void) {
@@ -284,7 +285,6 @@ void update(void) {
   if (card_table.hand.len)
     draw_deck(&card_table.hand);
   SDL_RenderPresent(ren);
-
 }
 
 int gfx_init(void) {
@@ -310,9 +310,7 @@ int gfx_init(void) {
   SDL_SetRenderDrawColor(ren, 0x07, 0x63, 0x24, 0);
   scale();
   clear();
-#ifndef __EMSCRIPTEN__
-  SDL_AddTimer(1000, game_timer, NULL);
-#endif
+
   return 0;
 }
 void scale(void) {
@@ -330,23 +328,28 @@ void scale(void) {
 void main_loop(void) {
 
   SDL_Event event;
-#ifdef __EMSCRIPTEN__
-  {
-    if(GAME_STATE == ENDING) {
-      game_over();
-      return;
-    } else {
-      SDL_PollEvent(&event);
-    }
-#else
+  SDL_Event excess_events[10];
+
   while (1) {
     if(GAME_STATE == ENDING) {
       game_over();
-      continue;
-    } else {
-      SDL_WaitEvent(&event);
-    }
+#ifdef __EMSCRIPTEN__
+      return;
 #endif
+      continue;
+    }
+
+    int cur_ticks = SDL_GetTicks() - GAME_START_TICKS;
+    int to = 0;
+    if(GAME_STATE == RUNNING && cur_ticks - GAME_TIME >= 1000) {
+      GAME_TIME = cur_ticks;
+      need_update();
+    } else {
+      to = 1000 - (cur_ticks - GAME_TIME);
+    }
+
+    SDL_WaitEventTimeout(&event, to);
+
     switch (event.type) {
     case SDL_WINDOWEVENT:
       if (event.window.event == SDL_WINDOWEVENT_CLOSE)
@@ -356,7 +359,7 @@ void main_loop(void) {
         WIN_H = event.window.data2;
         scale();
       }
-      update();
+      need_update();
       break;
     case SDL_KEYUP:
       if (event.key.keysym.sym == SDLK_ESCAPE)
@@ -364,7 +367,7 @@ void main_loop(void) {
       if (event.key.keysym.sym == SDLK_n &&
           (event.key.keysym.mod & KMOD_CTRL)) {
         new_game();
-        update();
+        need_update();
       }
       break;
     case SDL_MOUSEBUTTONDOWN:
@@ -380,6 +383,10 @@ void main_loop(void) {
       handle_motion(&event);
       break;
     case SDL_USEREVENT:
+      //Remove excess update events, only need it once.
+      while (SDL_PeepEvents(excess_events, 10, SDL_GETEVENT, SDL_USEREVENT,
+                            SDL_USEREVENT) > 0) {
+      }
       update();
       break;
 #ifdef __EMSCRIPTEN__
@@ -388,14 +395,12 @@ void main_loop(void) {
       break;
 #endif
     }
-  }
 #ifdef __EMSCRIPTEN__
-  int tm = time(NULL);
-  if (tm - last_loop_tm >= 1) {
-    last_loop_tm = tm;
-    game_timer(0, NULL);
-  }
+    need_update();
+    return;
 #endif
+  }
+
   return;
 }
 
@@ -469,7 +474,7 @@ void stock_click(void) {
       add_card(&card_table.stock, card->num, DOWN);
     }
   }
-  update();
+  need_update();
 }
 void waste_foundation_click(SDL_Event *event, struct Card *card) {
   if (NULL == card)
@@ -516,7 +521,7 @@ void handle_click(SDL_Event *event) {
   mp.y = event->button.y;
   if (SDL_PointInRect(&mp, &button_rect)) {
     new_game();
-    update();
+    need_update();
     return;
   }
 
@@ -556,7 +561,7 @@ void quick_move(struct Card *card) {
         add_card(deck, card->num, UP);
         if (card->deck->len && card->deck->tail->facing == DOWN)
           flip_card(card->deck->tail);
-        update();
+        need_update();
         check_game_over();
         return;
       }
@@ -567,7 +572,7 @@ void quick_move(struct Card *card) {
         add_card(deck, card->num, UP);
         if (card->deck->len && card->deck->tail->facing == DOWN)
           flip_card(card->deck->tail);
-        update();
+        need_update();
         check_game_over();
         return;
       }
@@ -621,7 +626,7 @@ void handle_unclick(SDL_Event *event) {
   } else {
     stack_deck(&card_table.hand, HandState.hand_from);
   }
-  update();
+  need_update();
   check_game_over();
 }
 void handle_motion(SDL_Event *event) {
@@ -640,7 +645,7 @@ void handle_motion(SDL_Event *event) {
     while (SDL_PeepEvents(excess_events, 10, SDL_GETEVENT, SDL_MOUSEMOTION,
                           SDL_MOUSEMOTION) > 0) {
     }
-    update();
+    need_update();
   }
 
 }
@@ -737,28 +742,25 @@ void draw_outline(struct Deck *deck) {
   rect.h = CARD_H;
   SDL_RenderCopy(ren, cardimg, NULL, &rect);
 }
-unsigned int game_timer(unsigned int i, void *param) {
-  if (GAME_STATE == RUNNING) {
-    GAME_TIME += 1;
-    SDL_Event event;
-    SDL_UserEvent userevent;
+void need_update() {
+  SDL_Event event;
+  SDL_UserEvent userevent;
 
-    userevent.type = SDL_USEREVENT;
-    userevent.code = 0;
-    userevent.data1 = NULL;
-    userevent.data2 = NULL;
+  userevent.type = SDL_USEREVENT;
+  userevent.code = 0;
+  userevent.data1 = NULL;
+  userevent.data2 = NULL;
 
-    event.type = SDL_USEREVENT;
-    event.user = userevent;
+  event.type = SDL_USEREVENT;
+  event.user = userevent;
 
-    SDL_PushEvent(&event);
-  }
-  return 1000;
+  SDL_PushEvent(&event);
 }
+
 void draw_header(void) {
   SDL_Rect trect = {};
   char str[10] = {};
-  snprintf(str, 10, "%u", GAME_TIME);
+  snprintf(str, 10, "%u", GAME_TIME/1000);
 
   if (!Sans)
     printf("Faild font load: %s\n", SDL_GetError());
@@ -851,11 +853,8 @@ void game_over(void) {
   SDL_RenderPresent(ren);
   if(done) {
     GAME_STATE = END;
-    update();
+    need_update();
   }
-  
-  
-  
 }
 
 int main(int argc, char* argv[]) {
