@@ -28,6 +28,8 @@ int WIN_W;
 int WIN_H;
 
 int GAME_TIME = 0;
+int GAME_END_TIME = 0;
+float RND_OFF = 0;
 enum STATE GAME_STATE = RUNNING;
 int last_loop_tm = 0;
 
@@ -291,6 +293,7 @@ int gfx_init(void) {
     SDL_Log("Unable to initialize SDL: %s", SDL_GetError());
     return -1;
   }
+  SDL_GL_SetAttribute(SDL_GL_RETAINED_BACKING, 0);
   if (TTF_Init() == -1) {
     SDL_Log("TTF_Init: %s\n", TTF_GetError());
     return -1;
@@ -329,10 +332,20 @@ void main_loop(void) {
   SDL_Event event;
 #ifdef __EMSCRIPTEN__
   {
-    SDL_PollEvent(&event);
+    if(GAME_STATE == ENDING) {
+      game_over();
+      return;
+    } else {
+      SDL_PollEvent(&event);
+    }
 #else
   while (1) {
-    SDL_WaitEvent(&event);
+    if(GAME_STATE == ENDING) {
+      game_over();
+      continue;
+    } else {
+      SDL_WaitEvent(&event);
+    }
 #endif
     switch (event.type) {
     case SDL_WINDOWEVENT:
@@ -808,27 +821,40 @@ void check_game_over(void) {
     fcards += card_table.foundations[f].len;
   }
   if (fcards == DSIZE) {
-    GAME_STATE = END;
-    const float PI = 3.141;
-    const float rnd_off = (float)(rand() % 360) * (PI/180.0);
-    for (int i = 0; i < 300; i++) {
-      for (int d = 0; d < FOUNDATIONS; d++) {
-        struct Deck *deck = &card_table.foundations[d];
-        SDL_Point corner;
-        deck_xy(deck, &corner);
-        for (int c = 0; c < deck->len; c++) {
-          float ang = rnd_off + 2.0 * PI *
-                      ((float)(d + c) / (float)(FOUNDATIONS + deck->len - 2));
-          draw_card(&deck->cards[c], corner.x + cos(ang) * i * 10.0,
-                    corner.y + sin(ang) * i * 10.0);
-        }
-      }
-      SDL_RenderPresent(ren);
-      SDL_Delay(10);
+    GAME_STATE = ENDING;
+    RND_OFF = (float)(rand() % 360) * (PI/180.0);
+    GAME_END_TIME = SDL_GetTicks();
+  }
+}
+
+void game_over(void) {
+  BOOL done = TRUE;
+  float i = (SDL_GetTicks() - GAME_END_TIME)/10.0;
+  SDL_RenderClear(ren);
+  for (int d = 0; d < FOUNDATIONS; d++) {
+    struct Deck *deck = &card_table.foundations[d];
+    SDL_Point corner;
+    deck_xy(deck, &corner);
+    for (int c = 0; c < deck->len; c++) {
+      float ang = RND_OFF + 2.0 * PI *
+                  ((float)(d + c) / (float)(FOUNDATIONS + deck->len - 2));
+      const float x = corner.x + cos(ang) * i * 10.0;
+      const float y = corner.y + sin(ang) * i * 10.0;
+      draw_card(&deck->cards[c], x, y);
+      if(x + CARD_W >= 0 && x <= WIN_W && y + CARD_H >= 0 && y <= WIN_H)
+        done = FALSE;
+      
     }
-    SDL_Delay(2000);
+  }
+
+  SDL_RenderPresent(ren);
+  if(done) {
+    GAME_STATE = END;
     update();
   }
+  
+  
+  
 }
 
 int main(int argc, char* argv[]) {
@@ -836,6 +862,21 @@ int main(int argc, char* argv[]) {
   new_game();
   if (-1 == gfx_init())
     return -1;
+
+  //Code for testing end of game animation:
+  // int f = 0;
+  // for(int i=0;i<PILES; i++) {
+  //    while(card_table.piles[i].len) {
+  //      struct Card *card = draw(&card_table.piles[i]);
+  //      add_card(&card_table.foundations[f%4], card->num, UP);
+  //      f++;
+  //    }
+  // }
+  // while(card_table.stock.len > 1) {
+  //  struct Card *card = draw(&card_table.stock);
+  //  add_card(&card_table.foundations[f%4], card->num, UP);
+  //  f++;
+  // }
 #ifdef __EMSCRIPTEN__
   emscripten_set_main_loop(main_loop, 0, 1);
 #else

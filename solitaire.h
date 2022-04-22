@@ -21,6 +21,8 @@
 
 #define STAGGER_DIV 40
 
+#define PI 3.141f
+
 typedef uint8_t bool;
 typedef enum { FALSE, TRUE } BOOL;
 enum SUITE { DIAMOND, CLUB, HEART, SPADE };
@@ -42,7 +44,7 @@ enum CARD {
 };
 enum FACE { DOWN, UP };
 enum DECK_TYPE { FOUNDATION, PILE, WASTE, STOCK, HAND };
-enum STATE { RUNNING, END };
+enum STATE { RUNNING, ENDING, END };
 struct Card {
   uint8_t num;
   enum FACE facing;
@@ -116,5 +118,6 @@ void check_game_over(void);
 void quick_move(struct Card *card);
 unsigned int game_timer(unsigned int, void *);
 void draw_header(void);
+void game_over(void);
 #define texture_from_card(CARD)                                                \
   (CARD->facing == UP ? t_cards[CARD->num] : t_cards[DSIZE]);
