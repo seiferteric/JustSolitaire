@@ -33,7 +33,6 @@ int GAME_END_TIME = 0;
 float RND_OFF = 0;
 enum STATE GAME_STATE = RUNNING;
 
-
 TTF_Font *Sans;
 
 struct {
@@ -272,6 +271,9 @@ void img_name_from_num(uint8_t num, char *file_name) {
   sprintf(file_name, "img/%s_of_%ss.png", card_name, suite_name);
 }
 void quit(void) {
+#ifdef __EMSCRIPTEN__
+  emscripten_cancel_main_loop();
+#endif
   SDL_Quit();
   exit(0);
 }
