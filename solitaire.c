@@ -32,7 +32,7 @@ int GAME_TIME = 0;
 int GAME_END_TIME = 0;
 float RND_OFF = 0;
 enum STATE GAME_STATE = RUNNING;
-
+int LAST_FRAME_TICKS = 0;
 TTF_Font *Sans;
 
 struct {
@@ -291,7 +291,7 @@ void update(void) {
 
 int gfx_init(void) {
 
-  if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) != 0) {
+  if (SDL_Init(SDL_INIT_VIDEO) != 0) {
     SDL_Log("Unable to initialize SDL: %s", SDL_GetError());
     return -1;
   }
@@ -316,10 +316,11 @@ int gfx_init(void) {
   return 0;
 }
 void scale(void) {
-  CARD_SCALE = (0.1195 * WIN_W) / CARD_ORIG_W;
+  
+  float cw = ((float)WIN_W - 8.0*((float)WIN_W * PAD_X))/(float)PILES;
+  CARD_SCALE = cw/(float)CARD_ORIG_W;
   CARD_W = (int)((float)CARD_ORIG_W * CARD_SCALE);
   CARD_H = (int)((float)CARD_ORIG_H * CARD_SCALE);
-
 
   SDL_QueryTexture(t_cards[DSIZE + 2], NULL, NULL, &button_rect.w,
                    &button_rect.h);
@@ -349,9 +350,12 @@ void main_loop(void) {
     } else {
       to = 1000 - (cur_ticks - GAME_TIME);
     }
-
+    
     SDL_WaitEventTimeout(&event, to);
-
+    SDL_Point a, b;
+    deck_xy(&card_table.piles[0], &a);
+    deck_xy(&card_table.piles[PILES-1 ], &b);
+    
     switch (event.type) {
     case SDL_WINDOWEVENT:
       if (event.window.event == SDL_WINDOWEVENT_CLOSE)
@@ -653,27 +657,30 @@ void handle_motion(SDL_Event *event) {
 }
 
 int deck_xy(struct Deck *deck, SDL_Point *point) {
+  point->x = 0;
+  point->y = 0;
+  int STOCK_X = PAD_X * WIN_W;
+  int STOCK_Y = PAD_Y * WIN_W;
   switch (deck->type) {
   case STOCK:
     point->x = STOCK_X;
-    point->y = STOCK_Y + button_rect.h;
+    point->y = STOCK_Y;
     return 0;
   case HAND:
     point->x = HandState.hand_pos.x;
     point->y = HandState.hand_pos.y;
     return 0;
   case WASTE:
-    point->x = STOCK_X + CARD_W + WIN_W / STAGGER_DIV;
-    point->y = STOCK_Y + button_rect.h;
+    point->x = STOCK_X + CARD_W + (WIN_W * PAD_X);
+    point->y = STOCK_Y;
     return 0;
   case FOUNDATION:
-    point->x = STOCK_X + 3 * (CARD_W + WIN_W / STAGGER_DIV) +
-               deck->index * (CARD_W + WIN_W / STAGGER_DIV);
-    point->y = STOCK_Y + button_rect.h;
+    point->x = STOCK_X + CARD_W + 3.0*(WIN_W * PAD_X) + 2.0*CARD_W + deck->index * (CARD_W + WIN_W * PAD_X);
+    point->y = STOCK_Y;
     return 0;
   case PILE:
-    point->x = STOCK_X + deck->index * (CARD_W + WIN_W / STAGGER_DIV);
-    point->y = STOCK_Y + button_rect.h + CARD_H + WIN_W / STAGGER_DIV;
+    point->x = STOCK_X + deck->index * (CARD_W + WIN_W * PAD_X);
+    point->y = STOCK_Y + CARD_H + WIN_H * PAD_Y;
     return 0;
   default:
     return -1;
@@ -693,26 +700,26 @@ int card_xy(struct Card *card, SDL_Point *point) {
     if (card == &card->deck->cards[c]) {
       if (card->deck->stagger_x) {
         if (card->deck->stagger_n == -1) {
-          dp.x += (WIN_W / STAGGER_DIV) * c;
+          dp.x += (CARD_W * STAGGER_X) * c;
         } else if (card->deck->stagger_n > 0) {
           if (card->deck->len - c <= card->deck->stagger_n) {
             int n_or_len = card->deck->stagger_n > card->deck->len
                                ? card->deck->stagger_n
                                : card->deck->len;
-            dp.x += (WIN_W / STAGGER_DIV) *
+            dp.x += (CARD_W * STAGGER_X) *
                     (card->deck->stagger_n - (n_or_len - c));
           }
         }
       }
       if (card->deck->stagger_y) {
         if (card->deck->stagger_n == -1) {
-          dp.y += (WIN_H / STAGGER_DIV) * c;
+          dp.y += (CARD_H * STAGGER_Y) * c;
         } else if (card->deck->stagger_n > 0) {
           if (card->deck->len - c <= card->deck->stagger_n) {
             int n_or_len = card->deck->stagger_n > card->deck->len
                                ? card->deck->stagger_n
                                : card->deck->len;
-            dp.y += (WIN_H / STAGGER_DIV) *
+            dp.y += (CARD_H * STAGGER_Y) *
                     (card->deck->stagger_n - (n_or_len - c));
           }
         }
@@ -790,7 +797,7 @@ void draw_header(void) {
 }
 void draw_table(void) {
 
-  draw_header();
+  // draw_header();
   // Except HAND deck
   for (int d = 0; d < card_table.decks - 1; d++) {
     struct Deck *deck = card_table.deck_list[d];
@@ -834,7 +841,13 @@ void check_game_over(void) {
 
 void game_over(void) {
   BOOL done = TRUE;
+  int diff = SDL_GetTicks() - LAST_FRAME_TICKS;
+  if(diff < 10)
+    SDL_Delay(10 - diff);
+  
+  LAST_FRAME_TICKS = SDL_GetTicks();
   float i = (SDL_GetTicks() - GAME_END_TIME)/10.0;
+
   SDL_RenderClear(ren);
   for (int d = 0; d < FOUNDATIONS; d++) {
     struct Deck *deck = &card_table.foundations[d];

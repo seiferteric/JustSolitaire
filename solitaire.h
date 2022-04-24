@@ -16,10 +16,11 @@
 #define FOUNDATIONS 4
 #define PILES 7
 
-#define STOCK_X 10
-#define STOCK_Y 10
+#define PAD_X 0.01f
+#define PAD_Y 0.01f
 
-#define STAGGER_DIV 40
+#define STAGGER_X 0.1f
+#define STAGGER_Y 0.1f
 
 #define PI 3.141f
 
