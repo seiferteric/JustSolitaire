@@ -317,7 +317,7 @@ int gfx_init(void) {
 }
 void scale(void) {
   
-  float cw = ((float)WIN_W - 8.0*((float)WIN_W * PAD_X))/(float)PILES;
+  float cw = WIN_W*(1.0-PAD_X*2.0)/(7.0+SEP_X*6.0);
   CARD_SCALE = cw/(float)CARD_ORIG_W;
   CARD_W = (int)((float)CARD_ORIG_W * CARD_SCALE);
   CARD_H = (int)((float)CARD_ORIG_H * CARD_SCALE);
@@ -657,8 +657,8 @@ void handle_motion(SDL_Event *event) {
 int deck_xy(struct Deck *deck, SDL_Point *point) {
   point->x = 0;
   point->y = 0;
-  int STOCK_X = PAD_X * WIN_W;
-  int STOCK_Y = PAD_Y * WIN_W;
+  int STOCK_X = PAD_X_N(1);
+  int STOCK_Y = PAD_Y_N(1);
   switch (deck->type) {
   case STOCK:
     point->x = STOCK_X;
@@ -669,16 +669,16 @@ int deck_xy(struct Deck *deck, SDL_Point *point) {
     point->y = HandState.hand_pos.y;
     return 0;
   case WASTE:
-    point->x = STOCK_X + CARD_W + (WIN_W * PAD_X);
+    point->x = STOCK_X + CARD_W + SEP_X_N(1);
     point->y = STOCK_Y;
     return 0;
   case FOUNDATION:
-    point->x = STOCK_X + CARD_W + 3.0*(WIN_W * PAD_X) + 2.0*CARD_W + deck->index * (CARD_W + WIN_W * PAD_X);
+    point->x = STOCK_X + CARD_W + SEP_X_N(3) + 2.0*CARD_W + deck->index * (CARD_W + SEP_X_N(1));
     point->y = STOCK_Y;
     return 0;
   case PILE:
-    point->x = STOCK_X + deck->index * (CARD_W + WIN_W * PAD_X);
-    point->y = STOCK_Y + CARD_H + WIN_H * PAD_Y;
+    point->x = STOCK_X + deck->index * (CARD_W + SEP_X_N(1));
+    point->y = STOCK_Y + CARD_H + SEP_Y_N(1);
     return 0;
   default:
     return -1;
@@ -747,10 +747,10 @@ void draw_outline(struct Deck *deck) {
   rect.y = corner.y;
   rect.w = CARD_W;
   if(deck->stagger_x && deck->stagger_n)
-    rect.w += WIN_W*PAD_X*deck->stagger_n;
+    rect.w += STAGGER_X*CARD_W*(deck->stagger_n-1);
   rect.h = CARD_H;
   if(deck->stagger_y && deck->stagger_n)
-    rect.h += WIN_H*PAD_Y*deck->stagger_n;
+    rect.h += STAGGER_Y*CARD_H*(deck->stagger_n-1);
   SDL_RenderCopy(ren, cardimg, NULL, &rect);
 }
 void need_update() {
@@ -774,7 +774,7 @@ void draw_header(void) {
   snprintf(str, 10, "T: %u", GAME_TIME/1000);
   SDL_Point p;
   deck_xy(&card_table.foundations[0], &p);
-  SDL_Rect hrect = {p.x-CARD_W+2.0*WIN_W*PAD_X, p.y, CARD_W-3.0*WIN_W*PAD_X, CARD_H};
+  SDL_Rect hrect = {p.x-CARD_W+SEP_X_N(2), p.y, CARD_W-SEP_X_N(3), CARD_H};
 
   SDL_SetRenderDrawColor(ren, 0x06, 0x4f, 0x11, 0);
   SDL_RenderFillRect(ren, &hrect);
@@ -793,7 +793,6 @@ void draw_header(void) {
   SDL_RenderCopy(ren, Message, NULL, &trect);
   SDL_FreeSurface(surfaceMessage);
   SDL_DestroyTexture(Message);
-
 
   button_rect.x = hrect.x;
   button_rect.w = hrect.w;
