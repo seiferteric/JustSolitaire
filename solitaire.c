@@ -325,8 +325,6 @@ void scale(void) {
   SDL_QueryTexture(t_cards[DSIZE + 2], NULL, NULL, &button_rect.w,
                    &button_rect.h);
   Sans = TTF_OpenFont("./img/FreeSans.ttf", (int)(96.0 * CARD_SCALE));
-  button_rect.w = (int)((float)button_rect.w * CARD_SCALE * 2);
-  button_rect.h = (int)((float)button_rect.h * CARD_SCALE * 2);
 }
 void main_loop(void) {
 
@@ -748,7 +746,11 @@ void draw_outline(struct Deck *deck) {
   rect.x = corner.x;
   rect.y = corner.y;
   rect.w = CARD_W;
+  if(deck->stagger_x && deck->stagger_n)
+    rect.w += WIN_W*PAD_X*deck->stagger_n;
   rect.h = CARD_H;
+  if(deck->stagger_y && deck->stagger_n)
+    rect.h += WIN_H*PAD_Y*deck->stagger_n;
   SDL_RenderCopy(ren, cardimg, NULL, &rect);
 }
 void need_update() {
@@ -769,35 +771,41 @@ void need_update() {
 void draw_header(void) {
   SDL_Rect trect = {};
   char str[10] = {};
-  snprintf(str, 10, "%u", GAME_TIME/1000);
+  snprintf(str, 10, "T: %u", GAME_TIME/1000);
+  SDL_Point p;
+  deck_xy(&card_table.foundations[0], &p);
+  SDL_Rect hrect = {p.x-CARD_W+2.0*WIN_W*PAD_X, p.y, CARD_W-3.0*WIN_W*PAD_X, CARD_H};
+
+  SDL_SetRenderDrawColor(ren, 0x06, 0x4f, 0x11, 0);
+  SDL_RenderFillRect(ren, &hrect);
 
   if (!Sans)
     printf("Faild font load: %s\n", SDL_GetError());
   TTF_SizeText(Sans, str, &trect.w, &trect.h);
-  trect.x = WIN_W - trect.w;
-  trect.y = 0;
+
+  if(trect.w > hrect.w)
+    trect.w = hrect.w;
+  trect.x = hrect.x + hrect.w/2.0 - trect.w/2.0;
+  trect.y = hrect.y + hrect.h - trect.h;
   SDL_Color White = {255, 255, 255, 0};
   SDL_Surface *surfaceMessage = TTF_RenderText_Solid(Sans, str, White);
   SDL_Texture *Message = SDL_CreateTextureFromSurface(ren, surfaceMessage);
-
-  SDL_SetRenderDrawColor(ren, 0x43, 0x26, 0x16, 0);
-  SDL_Rect hrect = {0, 0, WIN_W, button_rect.h};
-  SDL_RenderFillRect(ren, &hrect);
-
-  button_rect.x = 0;
-  button_rect.y = 0;
-  SDL_RenderCopy(ren, t_cards[DSIZE + 2], NULL, &button_rect);
-  SDL_Rect rect = {WIN_W - button_rect.w, 0, button_rect.w, button_rect.h};
-  SDL_RenderFillRect(ren, &rect);
-  SDL_SetRenderDrawColor(ren, 0x07, 0x63, 0x24, 0);
-
   SDL_RenderCopy(ren, Message, NULL, &trect);
   SDL_FreeSurface(surfaceMessage);
   SDL_DestroyTexture(Message);
+
+
+  button_rect.x = hrect.x;
+  button_rect.w = hrect.w;
+  button_rect.h = button_rect.w*1.5;
+  button_rect.y = p.y;
+  SDL_RenderCopy(ren, t_cards[DSIZE + 2], NULL, &button_rect);
+  SDL_SetRenderDrawColor(ren, 0, 0, 0, 0);
+  SDL_SetRenderDrawColor(ren, 0x07, 0x63, 0x24, 0);
 }
 void draw_table(void) {
 
-  // draw_header();
+  draw_header();
   // Except HAND deck
   for (int d = 0; d < card_table.decks - 1; d++) {
     struct Deck *deck = card_table.deck_list[d];
