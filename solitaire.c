@@ -1,4 +1,5 @@
 #include "solitaire.h"
+#include <GL/gl.h>
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
 #endif
@@ -292,12 +293,13 @@ int gfx_init(void) {
     return -1;
   }
   SDL_GL_SetAttribute(SDL_GL_RETAINED_BACKING, 0);
+  SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
 
   WIN_W = 1100;
   WIN_H = 768;
   win = SDL_CreateWindow("JustSolitaire", SDL_WINDOWPOS_UNDEFINED,
                          SDL_WINDOWPOS_UNDEFINED, WIN_W, WIN_H,
-                         SDL_WINDOW_RESIZABLE);
+                         SDL_WINDOW_RESIZABLE | SDL_WINDOW_OPENGL);
   ren = SDL_CreateRenderer(win, -1, SDL_RENDERER_ACCELERATED);
 
   if (-1 == load_textures())
