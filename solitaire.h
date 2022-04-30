@@ -116,6 +116,7 @@ void img_name_from_num(uint8_t num, char *file_name);
 void scale(void);
 int gfx_init(void);
 void draw_card(struct Card *card, int x, int y);
+void draw_partial_card(struct Card *card, int x, int y, int w, int h);
 void draw_deck(struct Deck *deck);
 void main_loop(void);
 void draw_table(void);

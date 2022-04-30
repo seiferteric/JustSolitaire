@@ -726,6 +726,12 @@ void draw_card(struct Card *card, int x, int y) {
   rect.h = CARD_H;
   SDL_RenderCopy(ren, cardimg, NULL, &rect);
 }
+void draw_partial_card(struct Card *card, int x, int y, int w, int h) {
+  SDL_Texture *cardimg = texture_from_card(card);
+  const SDL_Rect drect = {x, y, w, h};
+  const SDL_Rect srect = {0, 0, (float)w/CARD_SCALE, (float)h/CARD_SCALE};
+  SDL_RenderCopy(ren, cardimg, &srect, &drect);
+}
 void draw_outline(struct Deck *deck) {
   SDL_Texture *cardimg = t_cards[DSIZE + 1];
   SDL_Rect rect = {};
@@ -779,8 +785,8 @@ void draw_deck(struct Deck *deck) {
     draw_outline(deck);
     return;
   }
-  if (!deck->len)
-    return;
+  // if (!deck->len)
+    // return;
   int n_cards = 1;
   if (deck->stagger_n > 0)
     n_cards = deck->stagger_n < deck->len ? deck->stagger_n : deck->len;
@@ -788,11 +794,20 @@ void draw_deck(struct Deck *deck) {
     n_cards = deck->len;
 
   int c = deck->len - n_cards > 0 ? deck->len - n_cards - 1 : 0;
+
   for (; c < deck->len; c++) {
+    int w = CARD_W;
+    int h = CARD_H;
     struct Card *card = &deck->cards[c];
     SDL_Point corner = {};
     card_xy(card, &corner);
-    draw_card(card, corner.x, corner.y);
+    if(n_cards != 1 && deck->stagger_x && c < deck->len-1) {
+      w = STAGGER_X*(float)CARD_W*1.36;
+    }
+    if(n_cards != 1 && deck->stagger_y && c < deck->len-1) {
+      h = STAGGER_Y*(float)CARD_H*1.25;
+    }
+    draw_partial_card(card, corner.x, corner.y, w, h);
   }
 }
 
