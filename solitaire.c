@@ -749,11 +749,10 @@ void draw_outline(struct Deck *deck) {
   if(deck->stagger_x && deck->stagger_n)
     rect.w += STAGGER_X*CARD_W*(deck->stagger_n-1);
   rect.h = CARD_H;
-  if(deck->stagger_y && deck->stagger_n)
-    rect.h += STAGGER_Y*CARD_H*(deck->stagger_n-1);
+
   SDL_RenderCopy(ren, cardimg, NULL, &rect);
 }
-void need_update() {
+void need_update(void) {
   SDL_Event event;
   SDL_UserEvent userevent;
 
@@ -774,7 +773,7 @@ void draw_header(void) {
   snprintf(str, 10, "T: %u", GAME_TIME/1000);
   SDL_Point p;
   deck_xy(&card_table.foundations[0], &p);
-  SDL_Rect hrect = {p.x-CARD_W+SEP_X_N(2), p.y, CARD_W-SEP_X_N(3), CARD_H};
+  SDL_Rect hrect = {p.x-CARD_W+SEP_X_N(3), p.y, CARD_W-SEP_X_N(4), CARD_H};
 
   SDL_SetRenderDrawColor(ren, 0x06, 0x4f, 0x11, 0);
   SDL_RenderFillRect(ren, &hrect);

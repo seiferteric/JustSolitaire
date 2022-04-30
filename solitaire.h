@@ -20,7 +20,7 @@
 #define PAD_Y 0.01f
 
 #define SEP_X 0.05f
-#define SEP_Y 0.01f
+#define SEP_Y 0.05f
 #define SEP_X_N(N) ((float)N*SEP_X*CARD_W)
 #define SEP_Y_N(N) ((float)N*SEP_Y*CARD_H)
 
@@ -127,6 +127,6 @@ void check_game_over(void);
 void quick_move(struct Card *card);
 void draw_header(void);
 void game_over(void);
-void need_update();
+void need_update(void);
 #define texture_from_card(CARD)                                                \
   (CARD->facing == UP ? t_cards[CARD->num] : t_cards[DSIZE]);
