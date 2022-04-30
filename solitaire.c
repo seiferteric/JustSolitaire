@@ -27,8 +27,6 @@ float CARD_SCALE;
 int WIN_W;
 int WIN_H;
 
-int GAME_START_TICKS = 0;
-int GAME_TIME = 0;
 int GAME_END_TIME = 0;
 float RND_OFF = 0;
 enum STATE GAME_STATE = RUNNING;
@@ -183,8 +181,6 @@ void stack_deck(struct Deck *src, struct Deck *dst) {
 
 void new_game(void) {
   init_table();
-  GAME_START_TICKS = SDL_GetTicks();
-  GAME_TIME = 0;
   GAME_STATE = RUNNING;
 }
 
@@ -510,14 +506,6 @@ void pile_click(SDL_Event *event, struct Card *card) {
 }
 
 void handle_click(SDL_Event *event) {
-  SDL_Point mp;
-  mp.x = event->button.x;
-  mp.y = event->button.y;
-  if (SDL_PointInRect(&mp, &button_rect)) {
-    new_game();
-    need_update();
-    return;
-  }
 
   struct Card *card = find_card(event->button.x, event->button.y);
   struct Deck *deck;
@@ -576,6 +564,14 @@ void quick_move(struct Card *card) {
 }
 
 void handle_dbl_click(SDL_Event *event) {
+  SDL_Point mp;
+  mp.x = event->button.x;
+  mp.y = event->button.y;
+  if (SDL_PointInRect(&mp, &button_rect)) {
+    new_game();
+    need_update();
+    return;
+  }
   struct Card *card = find_card(event->button.x, event->button.y);
   struct Deck *deck;
   if (NULL == card)
