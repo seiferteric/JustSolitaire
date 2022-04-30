@@ -33,7 +33,7 @@ int GAME_END_TIME = 0;
 float RND_OFF = 0;
 enum STATE GAME_STATE = RUNNING;
 int LAST_FRAME_TICKS = 0;
-TTF_Font *Sans;
+
 
 struct {
   BOOL clicked;
@@ -296,10 +296,7 @@ int gfx_init(void) {
     return -1;
   }
   SDL_GL_SetAttribute(SDL_GL_RETAINED_BACKING, 0);
-  if (TTF_Init() == -1) {
-    SDL_Log("TTF_Init: %s\n", TTF_GetError());
-    return -1;
-  }
+
   WIN_W = 1100;
   WIN_H = 768;
   win = SDL_CreateWindow("JustSolitaire", SDL_WINDOWPOS_UNDEFINED,
@@ -324,7 +321,6 @@ void scale(void) {
 
   SDL_QueryTexture(t_cards[DSIZE + 2], NULL, NULL, &button_rect.w,
                    &button_rect.h);
-  Sans = TTF_OpenFont("./img/FreeSans.ttf", (int)(96.0 * CARD_SCALE));
 }
 void main_loop(void) {
 
@@ -339,17 +335,11 @@ void main_loop(void) {
 #endif
       continue;
     }
-
-    int cur_ticks = SDL_GetTicks() - GAME_START_TICKS;
-    int to = 0;
-    if(GAME_STATE == RUNNING && cur_ticks - GAME_TIME >= 1000) {
-      GAME_TIME = cur_ticks;
-      need_update();
-    } else {
-      to = 1000 - (cur_ticks - GAME_TIME);
-    }
-    
-    SDL_WaitEventTimeout(&event, to);
+#ifdef __EMSCRIPTEN__
+  SDL_PollEvent(&event);
+#else
+    SDL_WaitEvent(&event);
+#endif
     SDL_Point a, b;
     deck_xy(&card_table.piles[0], &a);
     deck_xy(&card_table.piles[PILES-1 ], &b);
@@ -768,38 +758,13 @@ void need_update(void) {
 }
 
 void draw_header(void) {
-  SDL_Rect trect = {};
-  char str[10] = {};
-  snprintf(str, 10, "T: %u", GAME_TIME/1000);
   SDL_Point p;
   deck_xy(&card_table.foundations[0], &p);
   SDL_Rect hrect = {p.x-CARD_W+SEP_X_N(3), p.y, CARD_W-SEP_X_N(4), CARD_H};
 
-  SDL_SetRenderDrawColor(ren, 0x06, 0x4f, 0x11, 0);
-  SDL_RenderFillRect(ren, &hrect);
-
-  if (!Sans)
-    printf("Faild font load: %s\n", SDL_GetError());
-  TTF_SizeText(Sans, str, &trect.w, &trect.h);
-
-  if(trect.w > hrect.w)
-    trect.w = hrect.w;
-  trect.x = hrect.x + hrect.w/2.0 - trect.w/2.0;
-  trect.y = hrect.y + hrect.h - trect.h;
-  SDL_Color White = {255, 255, 255, 0};
-  SDL_Surface *surfaceMessage = TTF_RenderText_Solid(Sans, str, White);
-  SDL_Texture *Message = SDL_CreateTextureFromSurface(ren, surfaceMessage);
-  SDL_RenderCopy(ren, Message, NULL, &trect);
-  SDL_FreeSurface(surfaceMessage);
-  SDL_DestroyTexture(Message);
-
-  button_rect.x = hrect.x;
-  button_rect.w = hrect.w;
-  button_rect.h = button_rect.w*1.5;
-  button_rect.y = p.y;
+  button_rect = hrect;
   SDL_RenderCopy(ren, t_cards[DSIZE + 2], NULL, &button_rect);
-  SDL_SetRenderDrawColor(ren, 0, 0, 0, 0);
-  SDL_SetRenderDrawColor(ren, 0x07, 0x63, 0x24, 0);
+
 }
 void draw_table(void) {
 
