@@ -388,7 +388,7 @@ void main_loop(void) {
 #endif
     }
 #ifdef __EMSCRIPTEN__
-    need_update();
+    // need_update();
     return;
 #endif
   }
