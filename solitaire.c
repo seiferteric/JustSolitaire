@@ -292,6 +292,7 @@ int gfx_init(void) {
     SDL_Log("Unable to initialize SDL: %s", SDL_GetError());
     return -1;
   }
+  SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1");
   SDL_GL_SetAttribute(SDL_GL_RETAINED_BACKING, 0);
   SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
 
