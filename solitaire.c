@@ -312,8 +312,12 @@ int gfx_init(void) {
 }
 void scale(void) {
   
-  float cw = WIN_W*(1.0-PAD_X*2.0)/(7.0+SEP_X*6.0);
-  CARD_SCALE = cw/(float)CARD_ORIG_W;
+  float ch = (float)WIN_H/3.0;
+  float cw = (float)WIN_W/(7.0+SEP_X*6.0);
+  if(ch/(float)CARD_ORIG_H < cw/(float)CARD_ORIG_W)
+    CARD_SCALE = ch/(float)CARD_ORIG_H;
+  else
+    CARD_SCALE = cw/(float)CARD_ORIG_W;
   CARD_W = (int)((float)CARD_ORIG_W * CARD_SCALE);
   CARD_H = (int)((float)CARD_ORIG_H * CARD_SCALE);
 
@@ -645,8 +649,8 @@ void handle_motion(SDL_Event *event) {
 int deck_xy(struct Deck *deck, SDL_Point *point) {
   point->x = 0;
   point->y = 0;
-  int STOCK_X = PAD_X_N(1);
-  int STOCK_Y = PAD_Y_N(1);
+  int STOCK_X = ((float)WIN_W/2.0) - (3.5*CARD_W+SEP_X_N(3));
+  int STOCK_Y = 0;
   switch (deck->type) {
   case STOCK:
     point->x = STOCK_X;
@@ -756,9 +760,10 @@ void need_update(void) {
 }
 
 void draw_header(void) {
-  SDL_Point p;
-  deck_xy(&card_table.foundations[0], &p);
-  SDL_Rect hrect = {p.x-CARD_W+SEP_X_N(3), p.y, CARD_W-SEP_X_N(4), CARD_H};
+  SDL_Point pf, pw;
+  deck_xy(&card_table.foundations[0], &pf);
+  deck_xy(&card_table.waste, &pw);
+  SDL_Rect hrect = {pw.x+CARD_W+STAGGER_X_N(2), pf.y, pf.x-(pw.x+CARD_W+STAGGER_X_N(2)), CARD_H};
 
   button_rect = hrect;
   SDL_RenderCopy(ren, t_cards[DSIZE + 2], NULL, &button_rect);

@@ -15,19 +15,16 @@
 #define FOUNDATIONS 4
 #define PILES 7
 
-#define PAD_X 0.02f
-#define PAD_Y 0.01f
-
 #define SEP_X 0.05f
 #define SEP_Y 0.05f
-#define SEP_X_N(N) ((float)N*SEP_X*CARD_W)
-#define SEP_Y_N(N) ((float)N*SEP_Y*CARD_H)
+#define SEP_X_N(N) ((float)N*SEP_X*(float)CARD_W)
+#define SEP_Y_N(N) ((float)N*SEP_Y*(float)CARD_H)
 
-#define PAD_X_N(N) ((float)N*PAD_X*WIN_W)
-#define PAD_Y_N(N) ((float)N*PAD_Y*WIN_H)
+#define STAGGER_X 0.15f
+#define STAGGER_Y 0.15f
 
-#define STAGGER_X 0.1f
-#define STAGGER_Y 0.1f
+#define STAGGER_X_N(N) ((float)N*STAGGER_X*(float)CARD_W)
+#define STAGGER_Y_N(N) ((float)N*STAGGER_Y*(float)CARD_H)
 
 #define PI 3.141f
 
