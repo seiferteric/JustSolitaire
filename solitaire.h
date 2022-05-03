@@ -121,7 +121,6 @@ int deck_xy(struct Deck *deck, SDL_Point *point);
 void update(void);
 void check_game_over(void);
 void quick_move(struct Card *card);
-void draw_header(void);
 void game_over(void);
 void need_update(void);
 #define texture_from_card(CARD)                                                \

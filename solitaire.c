@@ -12,8 +12,9 @@ const char *const face_name[] = {"Down", "Up"};
 SDL_Window *win;
 SDL_Renderer *ren;
 SDL_Texture *t_cards[DSIZE + 3];
+SDL_Texture *t_cards_r[DSIZE + 3];
 
-SDL_Rect button_rect = {};
+SDL_Rect header_rect;
 
 int BUT_ORIG_W;
 int BUT_ORIG_H;
@@ -322,8 +323,12 @@ void scale(void) {
   CARD_W = (int)((float)CARD_ORIG_W * CARD_SCALE);
   CARD_H = (int)((float)CARD_ORIG_H * CARD_SCALE);
 
-  SDL_QueryTexture(t_cards[DSIZE + 2], NULL, NULL, &button_rect.w,
-                   &button_rect.h);
+  SDL_Point pf, pw;
+  deck_xy(&card_table.foundations[0], &pf);
+  deck_xy(&card_table.waste, &pw);
+  SDL_Rect hrect = {pw.x+CARD_W+STAGGER_X_N(2), pf.y, pf.x-(pw.x+CARD_W+STAGGER_X_N(2)), CARD_H};
+  header_rect = hrect;
+
 }
 void main_loop(void) {
 
@@ -574,7 +579,7 @@ void handle_dbl_click(SDL_Event *event) {
   SDL_Point mp;
   mp.x = event->button.x;
   mp.y = event->button.y;
-  if (SDL_PointInRect(&mp, &button_rect)) {
+  if (SDL_PointInRect(&mp, &header_rect)) {
     new_game();
     need_update();
     return;
@@ -760,19 +765,9 @@ void need_update(void) {
   SDL_PushEvent(&event);
 }
 
-void draw_header(void) {
-  SDL_Point pf, pw;
-  deck_xy(&card_table.foundations[0], &pf);
-  deck_xy(&card_table.waste, &pw);
-  SDL_Rect hrect = {pw.x+CARD_W+STAGGER_X_N(2), pf.y, pf.x-(pw.x+CARD_W+STAGGER_X_N(2)), CARD_H};
-
-  button_rect = hrect;
-  SDL_RenderCopy(ren, t_cards[DSIZE + 2], NULL, &button_rect);
-
-}
 void draw_table(void) {
 
-  draw_header();
+  SDL_RenderCopy(ren, t_cards[DSIZE + 2], NULL, &header_rect);
   // Except HAND deck
   for (int d = 0; d < card_table.decks - 1; d++) {
     struct Deck *deck = card_table.deck_list[d];
