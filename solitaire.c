@@ -760,8 +760,6 @@ void draw_outline(struct Deck *deck) {
   rect.x = corner.x;
   rect.y = corner.y;
   rect.w = CARD_W;
-  if(deck->stagger_x && deck->stagger_n)
-    rect.w += STAGGER_X*CARD_W*(deck->stagger_n-1);
   rect.h = CARD_H;
 
   SDL_RenderCopy(ren, cardimg, NULL, &rect);
