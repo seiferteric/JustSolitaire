@@ -11,8 +11,9 @@ const char *const face_name[] = {"Down", "Up"};
 
 SDL_Window *win;
 SDL_Renderer *ren;
-SDL_Texture *t_cards[DSIZE + 3];
-SDL_Texture *t_cards_r[DSIZE + 3];
+SDL_Surface *s_cards[DSIZE + 3] = {};
+SDL_Surface *s_cards_r[DSIZE + 3] = {};
+SDL_Texture *t_cards_r[DSIZE + 3] = {};
 
 SDL_Rect header_rect;
 
@@ -236,30 +237,29 @@ int load_textures(void) {
   for (int i = 0; i < DSIZE; i++) {
     char img_fname[256] = {};
     img_name_from_num(i, img_fname);
-    t_cards[i] = IMG_LoadTexture(ren, img_fname);
-    if (NULL == t_cards[i]) {
+    s_cards[i] = IMG_Load(img_fname);
+    if (NULL == s_cards[i]) {
       SDL_Log("Unable to load texture %s", img_fname);
       return -1;
     }
   }
-  t_cards[DSIZE] = IMG_LoadTexture(ren, "img/back.png");
-  if (NULL == t_cards[DSIZE]) {
+  s_cards[DSIZE] = IMG_Load("img/back.png");
+  if (NULL == s_cards[DSIZE]) {
     SDL_Log("Unable to load texture img/back.png");
     return -1;
   }
-  t_cards[DSIZE + 1] = IMG_LoadTexture(ren, "img/outline.png");
-  if (NULL == t_cards[DSIZE + 1]) {
+  s_cards[DSIZE + 1] = IMG_Load("img/outline.png");
+  if (NULL == s_cards[DSIZE + 1]) {
     SDL_Log("Unable to load texture img/outline.png");
     return -1;
   }
-  t_cards[DSIZE + 2] = IMG_LoadTexture(ren, "img/newgame.png");
-  if (NULL == t_cards[DSIZE + 2]) {
+  s_cards[DSIZE + 2] = IMG_Load("img/newgame.png");
+  if (NULL == s_cards[DSIZE + 2]) {
     SDL_Log("Unable to load texture img/newgame.png");
     return -1;
   }
-  SDL_QueryTexture(t_cards[DSIZE], NULL, NULL, &CARD_W, &CARD_H);
-  CARD_ORIG_H = CARD_H;
-  CARD_ORIG_W = CARD_W;
+  CARD_ORIG_H = CARD_H = s_cards[0]->h;
+  CARD_ORIG_W = CARD_W = s_cards[0]->w;
   return 0;
 }
 
@@ -322,12 +322,28 @@ void scale(void) {
     CARD_SCALE = cw/(float)CARD_ORIG_W;
   CARD_W = (int)((float)CARD_ORIG_W * CARD_SCALE);
   CARD_H = (int)((float)CARD_ORIG_H * CARD_SCALE);
-
   SDL_Point pf, pw;
   deck_xy(&card_table.foundations[0], &pf);
   deck_xy(&card_table.waste, &pw);
   SDL_Rect hrect = {pw.x+CARD_W+STAGGER_X_N(2), pf.y, pf.x-(pw.x+CARD_W+STAGGER_X_N(2)), CARD_H};
   header_rect = hrect;
+
+  for(int i=0;i<DSIZE+3;i++) {
+    if(t_cards_r[i]) {
+      SDL_FreeSurface(s_cards_r[i]);
+      SDL_DestroyTexture(t_cards_r[i]);
+    }
+  }
+  
+  for(int i=0;i<(DSIZE+2);i++) {
+    s_cards_r[i] = SDL_CreateRGBSurface(0, CARD_W, CARD_H, s_cards[i]->format->BitsPerPixel, s_cards[i]->format->Rmask, s_cards[i]->format->Gmask, s_cards[i]->format->Bmask, s_cards[i]->format->Amask);
+    SDL_BlitScaled(s_cards[i], NULL, s_cards_r[i], NULL);
+    t_cards_r[i] = SDL_CreateTextureFromSurface(ren, s_cards_r[i]);
+  }
+  s_cards_r[DSIZE+2] = SDL_CreateRGBSurface(0, header_rect.w, header_rect.h, s_cards[DSIZE+2]->format->BitsPerPixel, s_cards[DSIZE+2]->format->Rmask, s_cards[DSIZE+2]->format->Gmask, s_cards[DSIZE+2]->format->Bmask, s_cards[DSIZE+2]->format->Amask);
+  SDL_BlitScaled(s_cards[DSIZE+2], NULL, s_cards_r[DSIZE+2], NULL);
+  t_cards_r[DSIZE+2] = SDL_CreateTextureFromSurface(ren, s_cards_r[DSIZE+2]);
+
 
 }
 void main_loop(void) {
@@ -737,7 +753,7 @@ void draw_card(struct Card *card, int x, int y) {
   SDL_RenderCopy(ren, cardimg, NULL, &rect);
 }
 void draw_outline(struct Deck *deck) {
-  SDL_Texture *cardimg = t_cards[DSIZE + 1];
+  SDL_Texture *cardimg = t_cards_r[DSIZE + 1];
   SDL_Rect rect = {};
   SDL_Point corner = {};
   deck_xy(deck, &corner);
@@ -767,7 +783,7 @@ void need_update(void) {
 
 void draw_table(void) {
 
-  SDL_RenderCopy(ren, t_cards[DSIZE + 2], NULL, &header_rect);
+  SDL_RenderCopy(ren, t_cards_r[DSIZE + 2], NULL, &header_rect);
   // Except HAND deck
   for (int d = 0; d < card_table.decks - 1; d++) {
     struct Deck *deck = card_table.deck_list[d];
