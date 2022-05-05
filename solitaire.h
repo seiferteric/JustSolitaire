@@ -125,3 +125,4 @@ void game_over(void);
 void need_update(void);
 #define texture_from_card(CARD)                                                \
   (CARD->facing == UP ? t_cards_r[CARD->num] : t_cards_r[DSIZE]);
+#define card_num_from_name_suite(NAME, SUITE) ((SUITE*13)+NAME)

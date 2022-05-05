@@ -139,6 +139,8 @@ enum COLOR suite_color(enum SUITE suite) {
 enum COLOR card_color(struct Card *card) { return suite_color(card->suite); }
 
 BOOL can_drop_pile(struct Card *hand_card, struct Card *drop_on) {
+  if(drop_on->facing == DOWN || &drop_on->deck->cards[drop_on->deck->len-1] != drop_on)
+    return FALSE;
   if (drop_on->deck->type == PILE) {
     if (card_color(hand_card) != card_color(drop_on)) {
       if (drop_on->card - hand_card->card == 1 && hand_card->card != ACE) {
@@ -876,6 +878,7 @@ int main(int argc, char* argv[]) {
   //  add_card(&card_table.foundations[f%4], card->num, UP);
   //  f++;
   // }
+
 #ifdef __EMSCRIPTEN__
   emscripten_set_main_loop(main_loop, 0, 1);
 #else
