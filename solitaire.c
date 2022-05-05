@@ -1,5 +1,4 @@
 #include "solitaire.h"
-#include <GL/gl.h>
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
 #endif
@@ -35,7 +34,6 @@ float RND_OFF = 0;
 enum STATE GAME_STATE = RUNNING;
 int LAST_FRAME_TICKS = 0;
 
-
 struct {
   BOOL clicked;
   BOOL moving;
@@ -44,26 +42,6 @@ struct {
   struct Deck *hand_from;
 } HandState;
 
-enum SUITE suite_from_num(uint8_t card) {
-  uint8_t cards_in_suite = DSIZE / DSUITES;
-  return card / cards_in_suite;
-}
-enum CARD card_from_num(uint8_t card) {
-  uint8_t cards_in_suite = DSIZE / DSUITES;
-  return card % cards_in_suite;
-}
-
-const char *suite_name_from_suite(enum SUITE suite) {
-  return suite_names[suite];
-}
-const char *card_name_from_card(enum CARD card) { return card_names[card]; }
-const char *card_name_from_num(uint8_t num) {
-  return card_name_from_card(card_from_num(num));
-}
-const char *suite_name_from_num(uint8_t num) {
-  return suite_name_from_suite(suite_from_num(num));
-}
-const char *face_name_from_face(enum FACE face) { return face_name[face]; }
 void add_card(struct Deck *deck, uint8_t num, enum FACE face) {
   struct Card *card;
   if (deck->len > 0) {

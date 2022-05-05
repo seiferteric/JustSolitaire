@@ -81,14 +81,6 @@ struct Table {
   int decks;
 } card_table;
 
-enum SUITE suite_from_num(uint8_t card);
-enum CARD card_from_num(uint8_t card);
-
-const char *suite_name_from_suite(enum SUITE suite);
-const char *card_name_from_card(enum CARD card);
-const char *card_name_from_num(uint8_t num);
-const char *suite_name_from_num(uint8_t num);
-const char *face_name_from_face(enum FACE face);
 void shuffle_init(struct Deck *deck);
 struct Card *draw(struct Deck *deck);
 void init_deck(struct Deck *deck);
@@ -126,3 +118,10 @@ void need_update(void);
 #define texture_from_card(CARD)                                                \
   (CARD->facing == UP ? t_cards_r[CARD->num] : t_cards_r[DSIZE]);
 #define card_num_from_name_suite(NAME, SUITE) ((SUITE*13)+NAME)
+#define suite_from_num(CARD) (CARD / (DSIZE / DSUITES))
+#define card_from_num(CARD) (CARD % (DSIZE / DSUITES))
+#define suite_name_from_suite(SUITE) suite_names[SUITE]
+#define card_name_from_card(CARD) card_names[CARD]
+#define card_name_from_num(NUM) card_name_from_card(card_from_num(NUM))
+#define suite_name_from_num(NUM) suite_name_from_suite(suite_from_num(NUM))
+#define face_name_from_face(FACE) (face_name[FACE])
