@@ -340,7 +340,7 @@ void main_loop(void) {
       continue;
     }
 #ifdef __EMSCRIPTEN__
-  SDL_PollEvent(&event);
+  while(SDL_PollEvent(&event)){
 #else
     SDL_WaitEvent(&event);
 #endif
@@ -391,6 +391,7 @@ void main_loop(void) {
     case SDL_QUIT:
       emscripten_cancel_main_loop();
       break;
+    }
 #endif
     }
 #ifdef __EMSCRIPTEN__
@@ -639,10 +640,10 @@ void handle_motion(SDL_Event *event) {
   } else {
     // This just skips updates if we are moving too fast
     // since we don't need all those redraws...
-    SDL_Event excess_events[10];
-    while (SDL_PeepEvents(excess_events, 10, SDL_GETEVENT, SDL_MOUSEMOTION,
-                          SDL_MOUSEMOTION) > 0) {
-    }
+    //SDL_Event excess_events[10];
+    //while (SDL_PeepEvents(excess_events, 10, SDL_GETEVENT, SDL_MOUSEMOTION,
+    //                      SDL_MOUSEMOTION) > 0) {
+    //}
     need_update();
   }
 
