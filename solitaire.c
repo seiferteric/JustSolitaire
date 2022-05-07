@@ -164,6 +164,7 @@ void stack_deck(struct Deck *src, struct Deck *dst) {
 
 void new_game(void) {
   init_table();
+  scale();
   GAME_STATE = RUNNING;
 }
 
@@ -218,6 +219,7 @@ int load_textures(void) {
     char img_fname[256] = {};
     img_name_from_num(i, img_fname);
     s_cards[i] = IMG_Load(img_fname);
+    
     if (NULL == s_cards[i]) {
       SDL_Log("Unable to load texture %s", img_fname);
       return -1;
@@ -294,7 +296,13 @@ int gfx_init(void) {
 }
 void scale(void) {
   
-  float ch = (float)WIN_H/3.0;
+  // float ch = (float)WIN_H/3.0;
+  int max_len = 0;
+  for(int i=0;i<7;i++) {
+    if(card_table.piles[i].len > max_len)
+      max_len = card_table.piles[i].len;
+  }
+  float ch = (float)WIN_H/(2.0 + SEP_Y + (float)(max_len-1)*STAGGER_Y);
   float cw = (float)WIN_W/(7.0+SEP_X*6.0);
   if(ch/(float)CARD_ORIG_H < cw/(float)CARD_ORIG_W)
     CARD_SCALE = ch/(float)CARD_ORIG_H;
@@ -552,6 +560,7 @@ void quick_move(struct Card *card) {
         add_card(deck, card->num, UP);
         if (card->deck->len && card->deck->tail->facing == DOWN)
           flip_card(card->deck->tail);
+        scale();
         need_update();
         check_game_over();
         return;
@@ -563,6 +572,7 @@ void quick_move(struct Card *card) {
         add_card(deck, card->num, UP);
         if (card->deck->len && card->deck->tail->facing == DOWN)
           flip_card(card->deck->tail);
+        scale();
         need_update();
         check_game_over();
         return;
@@ -625,6 +635,7 @@ void handle_unclick(SDL_Event *event) {
   } else {
     stack_deck(&card_table.hand, HandState.hand_from);
   }
+  scale();
   need_update();
   check_game_over();
 }
@@ -839,10 +850,10 @@ void game_over(void) {
 
 int main(int argc, char* argv[]) {
 
-  new_game();
+  
   if (-1 == gfx_init())
     return -1;
-
+  new_game();
   //Code for testing end of game animation:
   // int f = 0;
   // for(int i=0;i<PILES; i++) {
