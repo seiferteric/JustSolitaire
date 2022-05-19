@@ -832,7 +832,7 @@ void game_over(void) {
     SDL_Delay(10 - diff);
   
   LAST_FRAME_TICKS = SDL_GetTicks();
-  float i = (SDL_GetTicks() - GAME_END_TIME)/10.0;
+  float t = SDL_GetTicks() - GAME_END_TIME;
 
   SDL_RenderClear(ren);
   for (int d = 0; d < FOUNDATIONS; d++) {
@@ -840,10 +840,11 @@ void game_over(void) {
     SDL_Point corner;
     deck_xy(deck, &corner);
     for (int c = 0; c < deck->len; c++) {
-      float ang = RND_OFF + 2.0 * PI *
-                  ((float)(d + c) / (float)(FOUNDATIONS + deck->len - 2));
-      const float x = corner.x + cos(ang) * i * 10.0;
-      const float y = corner.y + sin(ang) * i * 10.0;
+      srand(d*(DSIZE/FOUNDATIONS) + c);
+      float ang = RND_OFF + (float)(rand() % 360) * PI/180.0f;
+      float v = (10.0 + rand()%10) / 10.0f;
+      const float x = corner.x + cos(ang) * t * v;
+      const float y = corner.y + sin(ang) * t * v;
       draw_card(&deck->cards[c], x, y);
       if(x + CARD_W >= 0 && x <= WIN_W && y + CARD_H >= 0 && y <= WIN_H)
         done = FALSE;
