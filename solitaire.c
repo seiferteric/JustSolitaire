@@ -35,6 +35,7 @@ int GAME_END_TIME = 0;
 float RND_OFF = 0;
 enum STATE GAME_STATE = RUNNING;
 int LAST_FRAME_TICKS = 0;
+int game_num = 0;
 
 struct {
   BOOL clicked;
@@ -63,7 +64,8 @@ void shuffle_init(struct Deck *deck) {
   uint8_t cards[DSIZE];
   int count = DSIZE;
   init_deck(deck);
-  srand(time(NULL));
+  srand(time(NULL) + game_num);
+  game_num++;
   for (int i = 0; i < DSIZE; i++) {
     cards[i] = i;
   }
