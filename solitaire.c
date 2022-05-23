@@ -60,20 +60,18 @@ void add_card(struct Deck *deck, uint8_t num, enum FACE face) {
   card->suite_name = suite_name_from_suite(card->suite);
 }
 void shuffle_init(struct Deck *deck) {
-  uint64_t deck_mark = 0;
+  uint8_t cards[DSIZE];
+  int count = DSIZE;
   init_deck(deck);
   srand(time(NULL));
   for (int i = 0; i < DSIZE; i++) {
-    while (1) {
-      uint8_t drawn = rand() % DSIZE;
-      uint64_t bit = UINT64_C(1) << drawn;
-      if ((bit & deck_mark) == 0) {
-        deck_mark |= bit;
-        add_card(deck, drawn, DOWN);
-        break;
-      }
-    }
+    cards[i] = i;
   }
+	while(count > 0) {
+		int r = rand()%count;
+		add_card(deck, cards[r], DOWN);
+		cards[r] = cards[--count];
+	}
 }
 
 void init_deck(struct Deck *deck) {
