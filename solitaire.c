@@ -376,7 +376,7 @@ void scale(void) {
   SDL_BlitScaled(s_cards[DSIZE+2], NULL, s_cards_r[DSIZE+2], NULL);
   t_cards_r[DSIZE+2] = SDL_CreateTextureFromSurface(ren, s_cards_r[DSIZE+2]);
 
-  s_cards_r[DSIZE+3] = SDL_CreateRGBSurface(0, ng_rect.w, ng_rect.h, s_cards[DSIZE+3]->format->BitsPerPixel, s_cards[DSIZE+3]->format->Rmask, s_cards[DSIZE+3]->format->Gmask, s_cards[DSIZE+3]->format->Bmask, s_cards[DSIZE+3]->format->Amask);
+  s_cards_r[DSIZE+3] = SDL_CreateRGBSurface(0, undo_rect.w, undo_rect.h, s_cards[DSIZE+3]->format->BitsPerPixel, s_cards[DSIZE+3]->format->Rmask, s_cards[DSIZE+3]->format->Gmask, s_cards[DSIZE+3]->format->Bmask, s_cards[DSIZE+3]->format->Amask);
   SDL_BlitScaled(s_cards[DSIZE+3], NULL, s_cards_r[DSIZE+3], NULL);
   t_cards_r[DSIZE+3] = SDL_CreateTextureFromSurface(ren, s_cards_r[DSIZE+3]);
 
