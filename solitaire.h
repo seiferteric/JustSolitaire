@@ -77,9 +77,14 @@ struct Table {
   struct Deck waste;
   struct Deck stock;
   struct Deck hand;
-  struct Deck *deck_list[14];
+  struct Deck *deck_list[DECKS];
   int decks;
 } card_table;
+
+struct Deck undo_decks[DECKS];
+struct Deck undo_decks2[DECKS];
+
+BOOL init_done = FALSE;
 
 void shuffle_init(struct Deck *deck);
 struct Card *draw(struct Deck *deck);
@@ -116,6 +121,10 @@ void quick_move(struct Card *card);
 void game_over(void);
 void need_update(void);
 void scale_if_needed(void);
+void undo(void);
+void update_undo(void);
+void undo_update_undo(void);
+
 #define texture_from_card(CARD)                                                \
   (CARD->facing == UP ? t_cards_r[CARD->num] : t_cards_r[DSIZE]);
 #define card_num_from_name_suite(NAME, SUITE) ((SUITE*13)+NAME)

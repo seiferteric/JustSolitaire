@@ -10,11 +10,11 @@ const char *const face_name[] = {"Down", "Up"};
 
 SDL_Window *win;
 SDL_Renderer *ren;
-SDL_Surface *s_cards[DSIZE + 3] = {};
-SDL_Surface *s_cards_r[DSIZE + 3] = {};
-SDL_Texture *t_cards_r[DSIZE + 3] = {};
+SDL_Surface *s_cards[DSIZE + 4] = {};
+SDL_Surface *s_cards_r[DSIZE + 4] = {};
+SDL_Texture *t_cards_r[DSIZE + 4] = {};
 
-SDL_Rect header_rect;
+SDL_Rect ng_rect, undo_rect;
 
 int BUT_ORIG_W;
 int BUT_ORIG_H;
@@ -59,6 +59,30 @@ void add_card(struct Deck *deck, uint8_t num, enum FACE face) {
   card->deck = deck;
   card->card_name = card_name_from_card(card->card);
   card->suite_name = suite_name_from_suite(card->suite);
+}
+void update_undo(void) {
+  if(init_done) {
+    for(int i=0;i<DECKS;i++) {
+      memcpy(&undo_decks2[i], &undo_decks[i], sizeof(struct Deck));      
+      memcpy(&undo_decks[i], card_table.deck_list[i], sizeof(struct Deck));
+    }
+  }
+}
+void undo_update_undo(void) {
+  if(init_done) {
+    for(int i=0;i<DECKS;i++) {
+      memcpy(&undo_decks[i], &undo_decks2[i], sizeof(struct Deck));
+    }
+  }
+}
+void undo(void) {
+  if(card_table.hand.len == 0) {
+    for(int i=0;i<DECKS;i++) {
+      memcpy(card_table.deck_list[i], &undo_decks[i], sizeof(struct Deck));
+    }
+  }
+  scale_if_needed();
+  need_update();
 }
 void shuffle_init(struct Deck *deck) {
   uint8_t cards[DSIZE];
@@ -171,19 +195,20 @@ void new_game(void) {
 }
 
 void init_table(void) {
+  if(init_done)
+    update_undo();
+
   int ndecks = 0;
   memset(&card_table, 0, sizeof(struct Table));
   shuffle_init(&card_table.stock);
   card_table.stock.type = STOCK;
   card_table.stock.index = 0;
-  card_table.deck_list[ndecks] = &card_table.stock;
-  ndecks++;
+  card_table.deck_list[ndecks++] = &card_table.stock;
   for (int i = 0; i < FOUNDATIONS; i++) {
     init_deck(&card_table.foundations[i]);
-    card_table.deck_list[ndecks] = &card_table.foundations[i];
+    card_table.deck_list[ndecks++] = &card_table.foundations[i];
     card_table.foundations[i].type = FOUNDATION;
     card_table.foundations[i].index = i;
-    ndecks++;
   }
   for (int p = 0; p < PILES; p++) {
     init_deck(&card_table.piles[p]);
@@ -191,8 +216,7 @@ void init_table(void) {
     card_table.piles[p].stagger_n = -1;
     card_table.piles[p].type = PILE;
     card_table.piles[p].index = p;
-    card_table.deck_list[ndecks] = &card_table.piles[p];
-    ndecks++;
+    card_table.deck_list[ndecks++] = &card_table.piles[p];
     for (int c = 0; c <= p; c++) {
       struct Card *card = draw(&card_table.stock);
       add_card(&card_table.piles[p], card->num, c == p ? UP : DOWN);
@@ -204,17 +228,19 @@ void init_table(void) {
   card_table.waste.type = WASTE;
   card_table.waste.index = 0;
 
-  card_table.deck_list[ndecks] = &card_table.waste;
-  ndecks++;
+  card_table.deck_list[ndecks++] = &card_table.waste;
 
   init_deck(&card_table.hand);
   card_table.hand.stagger_y = TRUE;
   card_table.hand.stagger_n = -1;
   card_table.hand.type = HAND;
   card_table.hand.index = 0;
-  card_table.deck_list[ndecks] = &card_table.hand;
-  ndecks++;
+  card_table.deck_list[ndecks++] = &card_table.hand;
   card_table.decks = ndecks;
+  if(!init_done) {
+    init_done = TRUE;
+    update_undo();
+  }
 }
 int load_textures(void) {
   for (int i = 0; i < DSIZE; i++) {
@@ -240,6 +266,11 @@ int load_textures(void) {
   s_cards[DSIZE + 2] = IMG_Load("img/newgame.png");
   if (NULL == s_cards[DSIZE + 2]) {
     SDL_Log("Unable to load texture img/newgame.png");
+    return -1;
+  }
+  s_cards[DSIZE + 3] = IMG_Load("img/undo.png");
+  if (NULL == s_cards[DSIZE + 3]) {
+    SDL_Log("Unable to load texture img/undo.png");
     return -1;
   }
   CARD_ORIG_H = CARD_H = s_cards[0]->h;
@@ -323,10 +354,13 @@ void scale(void) {
   SDL_Point pf, pw;
   deck_xy(&card_table.foundations[0], &pf);
   deck_xy(&card_table.waste, &pw);
-  SDL_Rect hrect = {pw.x+CARD_W+STAGGER_X_N(2), pf.y, pf.x-(pw.x+CARD_W+STAGGER_X_N(2)), CARD_H};
-  header_rect = hrect;
+  SDL_Rect ng = {pw.x+CARD_W+STAGGER_X_N(2), pf.y, pf.x-(pw.x+CARD_W+STAGGER_X_N(2)), CARD_H/2};
+  ng_rect = ng;
+  ng.y += CARD_H/2;
+  undo_rect = ng;
+  
 
-  for(int i=0;i<DSIZE+3;i++) {
+  for(int i=0;i<DSIZE+4;i++) {
     if(t_cards_r[i]) {
       SDL_FreeSurface(s_cards_r[i]);
       SDL_DestroyTexture(t_cards_r[i]);
@@ -338,9 +372,13 @@ void scale(void) {
     SDL_BlitScaled(s_cards[i], NULL, s_cards_r[i], NULL);
     t_cards_r[i] = SDL_CreateTextureFromSurface(ren, s_cards_r[i]);
   }
-  s_cards_r[DSIZE+2] = SDL_CreateRGBSurface(0, header_rect.w, header_rect.h, s_cards[DSIZE+2]->format->BitsPerPixel, s_cards[DSIZE+2]->format->Rmask, s_cards[DSIZE+2]->format->Gmask, s_cards[DSIZE+2]->format->Bmask, s_cards[DSIZE+2]->format->Amask);
+  s_cards_r[DSIZE+2] = SDL_CreateRGBSurface(0, ng_rect.w, ng_rect.h, s_cards[DSIZE+2]->format->BitsPerPixel, s_cards[DSIZE+2]->format->Rmask, s_cards[DSIZE+2]->format->Gmask, s_cards[DSIZE+2]->format->Bmask, s_cards[DSIZE+2]->format->Amask);
   SDL_BlitScaled(s_cards[DSIZE+2], NULL, s_cards_r[DSIZE+2], NULL);
   t_cards_r[DSIZE+2] = SDL_CreateTextureFromSurface(ren, s_cards_r[DSIZE+2]);
+
+  s_cards_r[DSIZE+3] = SDL_CreateRGBSurface(0, ng_rect.w, ng_rect.h, s_cards[DSIZE+3]->format->BitsPerPixel, s_cards[DSIZE+3]->format->Rmask, s_cards[DSIZE+3]->format->Gmask, s_cards[DSIZE+3]->format->Bmask, s_cards[DSIZE+3]->format->Amask);
+  SDL_BlitScaled(s_cards[DSIZE+3], NULL, s_cards_r[DSIZE+3], NULL);
+  t_cards_r[DSIZE+3] = SDL_CreateTextureFromSurface(ren, s_cards_r[DSIZE+3]);
 
 
 }
@@ -385,6 +423,8 @@ void main_loop(void) {
         new_game();
         need_update();
       }
+      if (event.key.keysym.sym == SDLK_u)
+        undo();
       break;
     case SDL_MOUSEBUTTONDOWN:
       if (1 == event.button.clicks)
@@ -479,6 +519,7 @@ struct Card *find_card(int x, int y) {
 }
 void stock_click(void) {
   if (card_table.stock.len > 0) {
+    update_undo();
     for (int i = 0; i < DRAW_NUM; i++) {
       struct Card *card = draw(&card_table.stock);
       if (card) {
@@ -487,6 +528,8 @@ void stock_click(void) {
     }
   } else {
     struct Card *card;
+    if(card_table.waste.len)
+      update_undo();
     while ((card = draw(&card_table.waste))) {
       add_card(&card_table.stock, card->num, DOWN);
     }
@@ -507,7 +550,7 @@ void waste_foundation_click(SDL_Event *event, struct Card *card) {
   HandState.click_offset.y = event->button.y - corner.y;
   HandState.hand_pos.x = event->motion.x - HandState.click_offset.x;
   HandState.hand_pos.y = event->motion.y - HandState.click_offset.y;
-
+  update_undo();
   draw(card->deck);
   add_card(&card_table.hand, card->num, card->facing);
 }
@@ -524,6 +567,7 @@ void pile_click(SDL_Event *event, struct Card *card) {
   HandState.hand_pos.y = event->motion.y - HandState.click_offset.y;
 
   struct Card *dcard = NULL;
+  update_undo();
   while ((dcard = draw(card->deck)) != card) {
     add_card(&card_table.hand, dcard->num, DOWN);
   }
@@ -542,7 +586,6 @@ void handle_click(SDL_Event *event) {
     deck = card->deck;
   if (NULL == deck)
     return;
-
   switch (deck->type) {
   case STOCK:
     stock_click();
@@ -566,10 +609,13 @@ void quick_move(struct Card *card) {
     struct Deck *deck = &card_table.foundations[f];
     if (card->card == ACE) {
       if (0 == deck->len) {
+        update_undo();
         draw(card->deck);
         add_card(deck, card->num, UP);
         if (card->deck->len && card->deck->tail->facing == DOWN)
           flip_card(card->deck->tail);
+        
+        
         scale_if_needed();
         need_update();
         check_game_over();
@@ -578,6 +624,7 @@ void quick_move(struct Card *card) {
     } else {
       if (deck->len && deck->tail->suite == card->suite &&
           (card->card - deck->tail->card) == 1) {
+        update_undo();
         draw(card->deck);
         add_card(deck, card->num, UP);
         if (card->deck->len && card->deck->tail->facing == DOWN)
@@ -596,8 +643,13 @@ void handle_dbl_click(SDL_Event *event) {
   SDL_Point mp;
   mp.x = event->button.x;
   mp.y = event->button.y;
-  if (SDL_PointInRect(&mp, &header_rect)) {
+  if (SDL_PointInRect(&mp, &ng_rect)) {
     new_game();
+    need_update();
+    return;
+  }
+  if (SDL_PointInRect(&mp, &undo_rect)) {
+    undo();
     need_update();
     return;
   }
@@ -630,21 +682,26 @@ void handle_unclick(SDL_Event *event) {
   struct Card *drop_on = find_card(event->button.x, event->button.y);
   struct Deck *drop_deck = NULL;
   if (drop_on && can_drop_pile(&card_table.hand.cards[0], drop_on)) {
+    
     stack_deck(&card_table.hand, drop_on->deck);
     if (HandState.hand_from->len && HandState.hand_from->tail->facing == DOWN)
       flip_card(HandState.hand_from->tail);
   } else if ((drop_deck = find_deck(event->button.x, event->button.y)) &&
              !drop_deck->len) {
     if (can_drop_deck(&card_table.hand, drop_deck)) {
+      
       stack_deck(&card_table.hand, drop_deck);
       if (HandState.hand_from->len && HandState.hand_from->tail->facing == DOWN)
         flip_card(HandState.hand_from->tail);
     } else {
+      undo_update_undo();
       stack_deck(&card_table.hand, HandState.hand_from);
     }
   } else {
+    undo_update_undo();
     stack_deck(&card_table.hand, HandState.hand_from);
   }
+  
   scale_if_needed();
   need_update();
   check_game_over();
@@ -783,7 +840,8 @@ void need_update(void) {
 
 void draw_table(void) {
 
-  SDL_RenderCopy(ren, t_cards_r[DSIZE + 2], NULL, &header_rect);
+  SDL_RenderCopy(ren, t_cards_r[DSIZE + 2], NULL, &ng_rect);
+  SDL_RenderCopy(ren, t_cards_r[DSIZE + 3], NULL, &undo_rect);
   // Except HAND deck
   for (int d = 0; d < card_table.decks - 1; d++) {
     struct Deck *deck = card_table.deck_list[d];
@@ -864,6 +922,9 @@ int main(int argc, char* argv[]) {
   
   if (-1 == gfx_init())
     return -1;
+  memset(&undo_decks, 0, sizeof(struct Deck)*DECKS);
+  memset(&undo_decks2, 0, sizeof(struct Deck)*DECKS);
+
   new_game();
   //Code for testing end of game animation:
   // int f = 0;
