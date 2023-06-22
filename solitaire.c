@@ -683,11 +683,16 @@ void handle_unclick(SDL_Event *event) {
   struct Deck *drop_deck = NULL;
   if (drop_on && can_drop_pile(&card_table.hand.cards[0], drop_on)) {
     
+    if(HandState.hand_from == drop_on->deck)
+	undo_update_undo();
+
     stack_deck(&card_table.hand, drop_on->deck);
     if (HandState.hand_from->len && HandState.hand_from->tail->facing == DOWN)
       flip_card(HandState.hand_from->tail);
   } else if ((drop_deck = find_deck(event->button.x, event->button.y)) &&
              !drop_deck->len) {
+    if(HandState.hand_from == drop_deck)
+	undo_update_undo();
     if (can_drop_deck(&card_table.hand, drop_deck)) {
       
       stack_deck(&card_table.hand, drop_deck);
