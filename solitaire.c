@@ -429,9 +429,10 @@ void main_loop(void) {
       }
       if (event.key.keysym.sym == SDLK_u)
         undo();
-      if (event.key.keysym.sym == SDLK_r)
+      if (event.key.keysym.sym == SDLK_r) {
         new_game(1);
         need_update();
+	}
       break;
     case SDL_MOUSEBUTTONDOWN:
       if (1 == event.button.clicks)
