@@ -86,7 +86,7 @@ struct Deck undo_decks2[DECKS];
 
 BOOL init_done = FALSE;
 
-void shuffle_init(struct Deck *deck);
+void shuffle_init(struct Deck *deck, int);
 struct Card *draw(struct Deck *deck);
 void init_deck(struct Deck *deck);
 void flip_deck(struct Deck *deck);
@@ -98,9 +98,9 @@ BOOL can_drop_pile(struct Card *hand_card, struct Card *drop_on);
 BOOL can_drop_deck(struct Deck *hand, struct Deck *drop_on);
 void stack_deck(struct Deck *src, struct Deck *dst);
 
-void init_table(void);
+void init_table(int);
 
-void new_game(void);
+void new_game(int);
 
 void handle_click(SDL_Event *event);
 void handle_dbl_click(SDL_Event *event);

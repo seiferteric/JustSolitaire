@@ -36,6 +36,7 @@ float RND_OFF = 0;
 enum STATE GAME_STATE = RUNNING;
 int LAST_FRAME_TICKS = 0;
 int game_num = 0;
+int randr = 0;
 
 struct {
   BOOL clicked;
@@ -84,20 +85,23 @@ void undo(void) {
   scale_if_needed();
   need_update();
 }
-void shuffle_init(struct Deck *deck) {
+void shuffle_init(struct Deck *deck, int restart) {
   uint8_t cards[DSIZE];
   int count = DSIZE;
   init_deck(deck);
-  srand(time(NULL) + game_num);
+  if(0 == restart) {
+    randr = time(NULL) + game_num;
+  } 
+  srand(randr);
   game_num++;
   for (int i = 0; i < DSIZE; i++) {
     cards[i] = i;
   }
-	while(count > 0) {
-		int r = rand()%count;
-		add_card(deck, cards[r], DOWN);
-		cards[r] = cards[--count];
-	}
+    while(count > 0) {
+        int r = rand()%count;
+        add_card(deck, cards[r], DOWN);
+        cards[r] = cards[--count];
+    }
 }
 
 void init_deck(struct Deck *deck) {
@@ -188,19 +192,19 @@ void stack_deck(struct Deck *src, struct Deck *dst) {
   }
 }
 
-void new_game(void) {
-  init_table();
+void new_game(int restart) {
+  init_table(restart);
   scale_if_needed();
   GAME_STATE = RUNNING;
 }
 
-void init_table(void) {
+void init_table(int restart) {
   if(init_done)
     update_undo();
 
   int ndecks = 0;
   memset(&card_table, 0, sizeof(struct Table));
-  shuffle_init(&card_table.stock);
+  shuffle_init(&card_table.stock, restart);
   card_table.stock.type = STOCK;
   card_table.stock.index = 0;
   card_table.deck_list[ndecks++] = &card_table.stock;
@@ -420,11 +424,14 @@ void main_loop(void) {
         quit();
       if (event.key.keysym.sym == SDLK_n &&
           (event.key.keysym.mod & KMOD_CTRL)) {
-        new_game();
+        new_game(0);
         need_update();
       }
       if (event.key.keysym.sym == SDLK_u)
         undo();
+      if (event.key.keysym.sym == SDLK_r)
+        new_game(1);
+        need_update();
       break;
     case SDL_MOUSEBUTTONDOWN:
       if (1 == event.button.clicks)
@@ -644,7 +651,7 @@ void handle_dbl_click(SDL_Event *event) {
   mp.x = event->button.x;
   mp.y = event->button.y;
   if (SDL_PointInRect(&mp, &ng_rect)) {
-    new_game();
+    new_game(0);
     need_update();
     return;
   }
@@ -684,7 +691,7 @@ void handle_unclick(SDL_Event *event) {
   if (drop_on && can_drop_pile(&card_table.hand.cards[0], drop_on)) {
     
     if(HandState.hand_from == drop_on->deck)
-	undo_update_undo();
+    undo_update_undo();
 
     stack_deck(&card_table.hand, drop_on->deck);
     if (HandState.hand_from->len && HandState.hand_from->tail->facing == DOWN)
@@ -692,7 +699,7 @@ void handle_unclick(SDL_Event *event) {
   } else if ((drop_deck = find_deck(event->button.x, event->button.y)) &&
              !drop_deck->len) {
     if(HandState.hand_from == drop_deck)
-	undo_update_undo();
+      undo_update_undo();
     if (can_drop_deck(&card_table.hand, drop_deck)) {
       
       stack_deck(&card_table.hand, drop_deck);
@@ -930,7 +937,7 @@ int main(int argc, char* argv[]) {
   memset(&undo_decks, 0, sizeof(struct Deck)*DECKS);
   memset(&undo_decks2, 0, sizeof(struct Deck)*DECKS);
 
-  new_game();
+  new_game(0);
   //Code for testing end of game animation:
   // int f = 0;
   // for(int i=0;i<PILES; i++) {
