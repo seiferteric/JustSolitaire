@@ -432,17 +432,21 @@ void main_loop(void) {
       if (event.key.keysym.sym == SDLK_r) {
         new_game(1);
         need_update();
-	}
+  }
       break;
     case SDL_MOUSEBUTTONDOWN:
-      if (1 == event.button.clicks)
-        handle_click(&event);
-      else
-        handle_dbl_click(&event);
-      break;
+      if(event.button.button == 1) {
+        if (1 == event.button.clicks)
+          handle_click(&event);
+        else
+          handle_dbl_click(&event);
+        break;
+      }
     case SDL_MOUSEBUTTONUP:
-      handle_unclick(&event);
-      break;
+      if(event.button.button == 1) {
+        handle_unclick(&event);
+        break;
+      }
     case SDL_MOUSEMOTION:
       handle_motion(&event);
       break;
